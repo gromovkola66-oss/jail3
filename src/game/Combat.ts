@@ -475,6 +475,27 @@ export class Combat {
       const newX = dropped.position.x + dropped.userData.velocityX * delta;
       const newZ = dropped.position.z + dropped.userData.velocityZ * delta;
 
+      // Check Y collision against map objects
+      if (dropped.userData.velocityY < 0) {
+        const testBoxY = new THREE.Box3().setFromObject(dropped);
+        const deltaY = dropped.userData.velocityY * delta;
+        testBoxY.translate(new THREE.Vector3(0, deltaY, 0));
+        let landedOnObject = false;
+        for (const collider of this.mapColliders) {
+          if (testBoxY.intersectsBox(collider)) {
+            // Land on top of this collider
+            dropped.position.y = collider.max.y + 0.1;
+            dropped.userData.velocityY = 0;
+            dropped.userData.velocityX = 0;
+            dropped.userData.velocityZ = 0;
+            dropped.userData.grounded = true;
+            landedOnObject = true;
+            break;
+          }
+        }
+        if (landedOnObject) continue;
+      }
+
       // Floor collision
       if (newY <= 0.1) {
         dropped.position.y = 0.1;
