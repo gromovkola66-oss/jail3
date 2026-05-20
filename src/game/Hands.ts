@@ -307,7 +307,6 @@ export class Hands {
         const p = this.toggleProgress;
         const flick = Math.sin(p * Math.PI) * 0.05;
         this.rightArm.position.set(this.rightRest.x, this.rightRest.y + flick, this.rightRest.z - flick);
-        if (this.itemModel) this.itemModel.rotation.x += flick * 2;
         return;
       }
     }
