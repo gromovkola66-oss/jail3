@@ -162,7 +162,7 @@ export class CameraSystem {
           originalEmissiveIntensity: mat.emissiveIntensity,
         });
         mat.emissive.set(0x44ffaa);
-        mat.emissiveIntensity = 0.3;
+        mat.emissiveIntensity = 0.02;
       }
     });
   }
@@ -192,6 +192,10 @@ export class CameraSystem {
 
     if (!nearest) return false;
 
+    // Clear any existing highlight when entering terminal mode
+    this.clearHighlight();
+    this._terminalHighlighted = false;
+
     // Get cameras linked to this terminal via groupId
     this._activeCameras = this.cameras.filter(c => c.groupId === nearest!.groupId);
 
@@ -216,11 +220,19 @@ export class CameraSystem {
     this._selectedCameraIndex = null;
     this._activeCameras = [];
     this._screenshots = [];
+    this.clearHighlight();
+    this._terminalHighlighted = false;
     if (this.screenshotInterval !== null) {
       clearInterval(this.screenshotInterval);
       this.screenshotInterval = null;
     }
     document.body.requestPointerLock();
+    this.emitState();
+  }
+
+  forceUnhighlight() {
+    this.clearHighlight();
+    this._terminalHighlighted = false;
     this.emitState();
   }
 
