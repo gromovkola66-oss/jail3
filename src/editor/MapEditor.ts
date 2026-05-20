@@ -99,7 +99,7 @@ export class MapEditor {
     sun.shadow.mapSize.set(2048, 2048);
     this.scene.add(sun);
 
-    this.gridHelper = new THREE.GridHelper(400, 400, 0x444444, 0x2a2a2a);
+    this.gridHelper = new THREE.GridHelper(800, 800, 0x444444, 0x2a2a2a);
     this.gridHelper.visible = this.gridEnabled;
     this.scene.add(this.gridHelper);
     this.scene.add(new THREE.AxesHelper(8));

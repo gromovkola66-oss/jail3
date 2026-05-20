@@ -47,7 +47,7 @@ export class PlaytestMode {
     this.scene.background = null;
 
     // Sky dome
-    const skyGeo = new THREE.SphereGeometry(400, 32, 32);
+    const skyGeo = new THREE.SphereGeometry(800, 32, 32);
     const skyMat = new THREE.ShaderMaterial({
       uniforms: {},
       vertexShader: `
@@ -84,7 +84,7 @@ export class PlaytestMode {
       depthWrite: false,
     });
     this.scene.add(new THREE.Mesh(skyGeo, skyMat));
-    this.scene.fog = new THREE.Fog(0xc8e0f0, 20, 80);
+    this.scene.fog = new THREE.Fog(0xc8e0f0, 20, 200);
 
     // Рендерер
     this.renderer = new THREE.WebGLRenderer({ antialias: true });

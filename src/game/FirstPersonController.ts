@@ -205,12 +205,64 @@ export class FirstPersonController {
     const moveX = (forward.x * this.direction.z + right.x * this.direction.x) * speed * delta;
     const moveZ = (forward.z * this.direction.z + right.z * this.direction.x) * speed * delta;
 
-    // Horizontal collision
+    // Horizontal collision with step-up
+    const stepUpHeight = 0.55; // Maximum height player can step up (stairs are 0.5 per step)
+
     const newPosX = this.camera.position.clone(); newPosX.x += moveX;
-    if (!this.checkCollision(newPosX)) this.camera.position.x = newPosX.x;
+    if (this.checkCollision(newPosX)) {
+      // Try stepping up
+      const steppedX = newPosX.clone();
+      steppedX.y += stepUpHeight;
+      if (!this.checkCollision(steppedX)) {
+        // Can step up - find the exact height needed
+        this.camera.position.x = newPosX.x;
+        const feetYForStep = this.camera.position.y - this.currentHeight;
+        for (const collider of this.colliders) {
+          if (this.camera.position.x + 0.3 > collider.min.x &&
+              this.camera.position.x - 0.3 < collider.max.x &&
+              this.camera.position.z + 0.3 > collider.min.z &&
+              this.camera.position.z - 0.3 < collider.max.z &&
+              collider.max.y > feetYForStep &&
+              collider.max.y <= feetYForStep + stepUpHeight) {
+            this.camera.position.y = collider.max.y + this.currentHeight;
+            this.velocity.y = 0;
+            this.canJump = true;
+            break;
+          }
+        }
+      }
+      // else: blocked, don't move
+    } else {
+      this.camera.position.x = newPosX.x;
+    }
 
     const newPosZ = this.camera.position.clone(); newPosZ.z += moveZ;
-    if (!this.checkCollision(newPosZ)) this.camera.position.z = newPosZ.z;
+    if (this.checkCollision(newPosZ)) {
+      // Try stepping up
+      const steppedZ = newPosZ.clone();
+      steppedZ.y += stepUpHeight;
+      if (!this.checkCollision(steppedZ)) {
+        // Can step up - find the exact height needed
+        this.camera.position.z = newPosZ.z;
+        const feetYForStep = this.camera.position.y - this.currentHeight;
+        for (const collider of this.colliders) {
+          if (this.camera.position.x + 0.3 > collider.min.x &&
+              this.camera.position.x - 0.3 < collider.max.x &&
+              this.camera.position.z + 0.3 > collider.min.z &&
+              this.camera.position.z - 0.3 < collider.max.z &&
+              collider.max.y > feetYForStep &&
+              collider.max.y <= feetYForStep + stepUpHeight) {
+            this.camera.position.y = collider.max.y + this.currentHeight;
+            this.velocity.y = 0;
+            this.canJump = true;
+            break;
+          }
+        }
+      }
+      // else: blocked, don't move
+    } else {
+      this.camera.position.z = newPosZ.z;
+    }
 
     // Vertical
     this.camera.position.y += this.velocity.y * delta;
@@ -255,7 +307,7 @@ export class FirstPersonController {
     }
 
     // Ceiling
-    if (this.camera.position.y > 3.8) { this.camera.position.y = 3.8; this.velocity.y = 0; }
+    if (this.camera.position.y > 100) { this.camera.position.y = 100; this.velocity.y = 0; }
 
     // Camera recoil recovery
     if (this.recoilPitch > 0) {
