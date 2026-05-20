@@ -1,0 +1,28 @@
+{
+  "project_type": "3D jail game with TypeScript/Three.js and React UI (Vite bundled single-file)",
+  "language": "TypeScript",
+  "build_system": "Vite with vite-plugin-singlefile, no dedicated test runner",
+  "test_framework": "None - no test files exist in the project",
+  "build_command": "cd /projects/sandbox/jail3/JJB-fix-cleanup-and-bugfixes && npx vite build",
+  "test_command": "cd /projects/sandbox/jail3/JJB-fix-cleanup-and-bugfixes && npx tsc --noEmit",
+  "verification_instructions": "Run TypeScript compiler to verify no type errors, then run vite build to verify bundling succeeds",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd /projects/sandbox/jail3/JJB-fix-cleanup-and-bugfixes && npm install",
+  "environment_constraints": "OPEN_INTERNET network mode - full access to npm registry. No Docker needed.",
+  "contribution_requirements": "No CONTRIBUTING.md found - follow existing code patterns",
+  "key_patterns": "Three.js for 3D rendering. Hands.ts builds first-person fist meshes using BoxGeometry. Weapon.ts builds gun with hands colored by team. Combat.ts handles shooting/punching with mousedown only (no hold-to-fire). InventorySystem.ts manages inventory open/close/equip. CameraSystem.ts has terminal highlight/unhighlight via raycast. Game.ts orchestrates all systems. PrisonMapDetailed builds map with colliders (Box3 array). EditorObjects.ts defines placeable objects with no collision setup. Guard team color is 0x1e3a6e (dark blue), prisoner is 0xff6b35 (orange). Fist color is skin-only (0xd4a574). Dropped weapons float and rotate (no gravity).",
+  "relevant_files": [
+    "src/game/Hands.ts",
+    "src/game/Weapon.ts",
+    "src/game/Combat.ts",
+    "src/game/Game.ts",
+    "src/game/InventorySystem.ts",
+    "src/game/CameraSystem.ts",
+    "src/game/FirstPersonController.ts",
+    "src/components/GameUI.tsx",
+    "src/editor/EditorObjects.ts",
+    "src/editor/MapEditor.ts",
+    "src/game/PrisonMapDetailed.ts"
+  ],
+  "directory_structure": "src/game/ - game systems (Combat, Hands, Weapon, etc.); src/components/ - React UI; src/editor/ - map editor"
+}
