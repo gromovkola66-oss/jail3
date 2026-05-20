@@ -125,6 +125,11 @@ export class PlaytestMode {
     }
 
     // Коллизии
+    console.log('[PlaytestMode] Total colliders generated:', this.colliders.length);
+    if (this.colliders.length > 0) {
+      const first = this.colliders[0];
+      console.log('[PlaytestMode] First collider min/max:', first.min.toArray(), first.max.toArray());
+    }
     this.controller.setColliders(this.colliders);
     this.combat.setMapColliders(this.colliders);
 

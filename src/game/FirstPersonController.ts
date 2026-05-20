@@ -68,7 +68,10 @@ export class FirstPersonController {
     this.isSprinting = false;
   }
 
-  setColliders(colliders: THREE.Box3[]) { this.colliders = colliders; }
+  setColliders(colliders: THREE.Box3[]) {
+    this.colliders = colliders;
+    console.log('[FPC] setColliders called, count:', colliders.length);
+  }
 
   private setupEventListeners() {
     document.addEventListener('keydown', this.boundOnKeyDown);
@@ -136,6 +139,7 @@ export class FirstPersonController {
     }
   }
 
+  private _collisionLogCount = 0;
   private checkCollision(newPosition: THREE.Vector3): boolean {
     const h = this.currentHeight;
     const playerBox = new THREE.Box3(
@@ -143,7 +147,13 @@ export class FirstPersonController {
       new THREE.Vector3(newPosition.x + 0.3, newPosition.y + 0.2, newPosition.z + 0.3)
     );
     for (const collider of this.colliders) {
-      if (playerBox.intersectsBox(collider)) return true;
+      if (playerBox.intersectsBox(collider)) {
+        if (this._collisionLogCount < 3) {
+          console.log('[FPC] COLLISION DETECTED with collider:', collider.min.toArray(), collider.max.toArray());
+          this._collisionLogCount++;
+        }
+        return true;
+      }
     }
     return false;
   }
