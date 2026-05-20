@@ -50,6 +50,7 @@ export const EditorUI = ({
     { id: 'building', name: 'Стройка', icon: '🏗️', color: 'from-cyan-700 to-cyan-800' },
     { id: 'lighting', name: 'Свет', icon: '💡', color: 'from-yellow-600 to-yellow-700' },
     { id: 'scripts', name: 'Скрипты', icon: '⚡', color: 'from-purple-700 to-purple-800' },
+    { id: 'things', name: 'Вещи', icon: '🎒', color: 'from-red-700 to-red-800' },
   ];
 
   const filteredObjects = objectTypes.filter(o => o.category === activeCategory);
@@ -93,7 +94,7 @@ export const EditorUI = ({
 
       {/* === LEFT PANEL === */}
       <div className="absolute left-0 top-12 bottom-0 w-64 bg-gray-900/95 border-r border-gray-700 pointer-events-auto overflow-hidden flex flex-col">
-        <div className="grid grid-cols-5 gap-0.5 p-1.5 bg-gray-950">
+        <div className="grid grid-cols-6 gap-0.5 p-1.5 bg-gray-950">
           {categories.map(cat => (
             <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
               className={`py-2 rounded-md text-center text-xs font-medium transition-all duration-200 flex flex-col items-center gap-0.5 ${activeCategory === cat.id ? `bg-gradient-to-b ${cat.color} text-white shadow-lg scale-[1.02]` : 'bg-gray-800/60 text-gray-500 hover:bg-gray-700 hover:text-gray-300'}`}>

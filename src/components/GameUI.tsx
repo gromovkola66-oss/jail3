@@ -56,7 +56,7 @@ export const GameUI = ({ fps, position, isLocked, combatState, team, teamName, d
             <h1 className="text-4xl font-bold mb-4 text-red-500">
               JAILBREAK
             </h1>
-            <p className="text-xl mb-2 text-gray-300">Версия 0.7</p>
+            <p className="text-xl mb-2 text-gray-300">Версия 0.8</p>
             <p className={`text-lg mb-8 ${team === 'guard' ? 'text-blue-400' : 'text-orange-400'}`}>
               {teamName}
             </p>

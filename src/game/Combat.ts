@@ -43,6 +43,18 @@ export class Combat {
   
   private storedWeapon: Weapon | null = null;
 
+  // Item system
+  public heldItemType: string = 'none';
+  private flashlightOn = false;
+  private flashlight: THREE.SpotLight | null = null;
+  private isUsingConsumable = false;
+  private consumableTimer = 0;
+  private consumableDuration = 0;
+  private consumableType: string = '';
+  private shieldEquipped = false;
+  private bandageRegenTimer = 0;
+  private bandageRegenActive = false;
+
   // Callbacks
   public onStateChange?: (state: CombatState) => void;
   public onHit?: (damage: number) => void;
@@ -50,6 +62,7 @@ export class Combat {
   public onCameraRecoil?: (amount: number) => void;
   public onWeaponPickedUp?: (weaponName: string) => void;
   public onWeaponDropped?: () => void;
+  public onItemUsed?: (itemId: string) => void;
   
   private boundMouseDown = this.onMouseDown.bind(this);
   private boundMouseUp = this.onMouseUp.bind(this);
@@ -140,6 +153,18 @@ export class Combat {
       this.isMouseDown = true;
       if (this.weapon) {
         this.shoot();
+      } else if (this.heldItemType === 'item_shiv') {
+        this.meleeAttack('shiv');
+      } else if (this.heldItemType === 'item_baton') {
+        this.meleeAttack('baton');
+      } else if (this.heldItemType === 'item_flashlight') {
+        this.toggleFlashlight();
+      } else if (this.heldItemType === 'item_shield') {
+        // Shield has no attack action on click
+      } else if (this.heldItemType === 'item_medkit') {
+        this.useConsumable('item_medkit');
+      } else if (this.heldItemType === 'item_bandage') {
+        this.useConsumable('item_bandage');
       } else {
         this.punch();
       }
@@ -398,8 +423,102 @@ export class Combat {
     this.onWeaponDropped?.();
   }
 
+  private meleeAttack(type: 'shiv' | 'baton') {
+    if (this.isPunching || this.punchCooldown > 0 || this.isDead || this.isUsingConsumable) return;
+
+    this.isPunching = true;
+    this.punchCooldown = this.punchCooldownTime;
+
+    if (type === 'shiv') {
+      soundSystem.playShivAttack();
+    } else {
+      soundSystem.playBatonAttack();
+    }
+
+    this.hands.startMeleeAttack();
+
+    setTimeout(() => {
+      this.checkPunchHit();
+      this.isPunching = false;
+    }, 150);
+  }
+
+  equipItem(itemType: string) {
+    // If weapon is active, put it away first
+    if (this.weapon) {
+      this.putAwayWeapon();
+    }
+
+    this.heldItemType = itemType;
+    this.hands.setHeldItem(itemType);
+    this.shieldEquipped = itemType === 'item_shield';
+
+    // If flashlight was on and we're switching away, remove the light
+    if (itemType !== 'item_flashlight' && this.flashlight) {
+      this.camera.remove(this.flashlight);
+      this.camera.remove(this.flashlight.target);
+      this.flashlight = null;
+      this.flashlightOn = false;
+    }
+  }
+
+  unequipItem() {
+    if (this.flashlight) {
+      this.camera.remove(this.flashlight);
+      this.camera.remove(this.flashlight.target);
+      this.flashlight = null;
+      this.flashlightOn = false;
+    }
+    this.heldItemType = 'none';
+    this.shieldEquipped = false;
+    this.hands.setHeldItem('none');
+  }
+
+  private toggleFlashlight() {
+    if (this.isDead) return;
+    this.flashlightOn = !this.flashlightOn;
+    soundSystem.playFlashlightToggle();
+    this.hands.startFlashlightToggle();
+
+    if (this.flashlightOn) {
+      this.flashlight = new THREE.SpotLight(0xffffff, 2, 30, Math.PI / 6, 0.3, 1);
+      this.flashlight.position.set(0, 0, -0.5);
+      this.flashlight.target.position.set(0, 0, -5);
+      this.camera.add(this.flashlight);
+      this.camera.add(this.flashlight.target);
+    } else {
+      if (this.flashlight) {
+        this.camera.remove(this.flashlight);
+        this.camera.remove(this.flashlight.target);
+        this.flashlight = null;
+      }
+    }
+  }
+
+  useConsumable(itemType: string) {
+    if (this.isUsingConsumable || this.isDead) return;
+
+    this.isUsingConsumable = true;
+    this.consumableType = itemType;
+
+    if (itemType === 'item_medkit') {
+      this.consumableDuration = 2;
+      this.hands.startUseAnimation('medkit');
+    } else if (itemType === 'item_bandage') {
+      this.consumableDuration = 3;
+      this.hands.startUseAnimation('bandage');
+    }
+    this.consumableTimer = 0;
+  }
+
   takeDamage(damage: number) {
     if (this.isDead) return;
+
+    // Shield blocks all frontal damage
+    if (this.shieldEquipped) {
+      soundSystem.playShieldBlock();
+      return;
+    }
     
     this.hp = Math.max(0, this.hp - damage);
     
@@ -456,6 +575,35 @@ export class Combat {
     // Обновляем кулдаун удара
     if (this.punchCooldown > 0) {
       this.punchCooldown -= delta;
+    }
+
+    // Consumable use timer
+    if (this.isUsingConsumable) {
+      this.consumableTimer += delta;
+      if (this.consumableTimer >= this.consumableDuration) {
+        this.isUsingConsumable = false;
+        if (this.consumableType === 'item_medkit') {
+          this.heal(50);
+          soundSystem.playHeal();
+          this.onItemUsed?.(this.consumableType);
+        } else if (this.consumableType === 'item_bandage') {
+          soundSystem.playBandageWrap();
+          this.bandageRegenActive = true;
+          this.bandageRegenTimer = 0;
+          this.onItemUsed?.(this.consumableType);
+        }
+        this.consumableType = '';
+      }
+    }
+
+    // Bandage regen over time (+3 HP/sec for ~7 seconds = +20 total)
+    if (this.bandageRegenActive) {
+      this.bandageRegenTimer += delta;
+      if (this.bandageRegenTimer < 7) {
+        this.heal(Math.round(3 * delta));
+      } else {
+        this.bandageRegenActive = false;
+      }
     }
 
     // Automatic fire while holding mouse button

@@ -336,6 +336,200 @@ export class SoundSystem {
     osc.start(now);
     osc.stop(now + 0.05);
   }
+
+  // === АТАКА ЗАТОЧКОЙ ===
+  playShivAttack() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // High freq noise burst (sharp metallic slash)
+    const bufferSize = ctx.sampleRate * 0.1;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 20) * 0.7;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 2000;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 0.6, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    // Resonant ring
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(3000, now);
+    osc.frequency.exponentialRampToValueAtTime(1500, now + 0.08);
+    osc.type = 'sine';
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.3, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    osc.connect(oscGain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.1);
+    osc.start(now);
+    osc.stop(now + 0.08);
+  }
+
+  // === АТАКА ДУБИНКОЙ ===
+  playBatonAttack() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Low freq sweep (whoosh)
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(200, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+    osc.type = 'sine';
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.5, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    // Impact noise
+    const bufferSize = ctx.sampleRate * 0.08;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 25) * 0.6;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 600;
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(this.masterVolume * 0.7, now + 0.05);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc.connect(oscGain).connect(ctx.destination);
+    noise.connect(filter).connect(noiseGain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.15);
+    noise.start(now + 0.05);
+    noise.stop(now + 0.12);
+  }
+
+  // === БЛОК ЩИТОМ ===
+  playShieldBlock() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Resonant metallic ring at ~300Hz
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 300;
+    osc.type = 'sine';
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.8, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+    // Noise burst
+    const bufferSize = ctx.sampleRate * 0.06;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 30) * 0.5;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(this.masterVolume * 0.5, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+    osc.connect(oscGain).connect(ctx.destination);
+    noise.connect(noiseGain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+    noise.start(now);
+    noise.stop(now + 0.06);
+  }
+
+  // === ЩЕЛЧОК ФОНАРИКА ===
+  playFlashlightToggle() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Brief high-freq pulse (click)
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 3500;
+    osc.type = 'square';
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.025);
+  }
+
+  // === ЗВУК ЛЕЧЕНИЯ ===
+  playHeal() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // 3 ascending sine tones (gentle chime)
+    const notes = [523, 659, 784]; // C5, E5, G5
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, now + i * 0.12);
+      gain.gain.linearRampToValueAtTime(this.masterVolume * 0.25, now + i * 0.12 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.25);
+
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + i * 0.12);
+      osc.stop(now + i * 0.12 + 0.25);
+    });
+  }
+
+  // === ЗВУК БИНТОВАНИЯ ===
+  playBandageWrap() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Soft rustling (filtered noise with envelope)
+    const bufferSize = ctx.sampleRate * 0.4;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      const envelope = Math.sin(t * Math.PI) * 0.4;
+      data[i] = (Math.random() * 2 - 1) * envelope;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 2000;
+    filter.Q.value = 1;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.4);
+  }
 }
 
 // Синглтон
