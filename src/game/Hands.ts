@@ -222,15 +222,30 @@ export class Hands {
         break;
       }
       case 'shield': {
-        // Large transparent panel with frame - held in left arm
-        const frame = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 0.02), metalDark);
+        // Large transparent riot shield - held centered with both hands
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.0, 0.025), metalDark);
         g.add(frame);
-        const glass = new THREE.MeshStandardMaterial({ color: 0xaaddff, roughness: 0.1, transparent: true, opacity: 0.35 });
-        const panel = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.4, 0.01), glass);
+        const glass = new THREE.MeshStandardMaterial({ color: 0xaaddff, roughness: 0.1, transparent: true, opacity: 0.25 });
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.75, 0.015), glass);
         panel.position.set(0, 0.05, 0.01);
         g.add(panel);
-        g.position.set(-0.15, -0.1, -0.55);
-        g.rotation.y = 0.1;
+        // Top metal strip
+        const topStrip = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.04, 0.02), metalMid);
+        topStrip.position.set(0, 0.48, 0);
+        g.add(topStrip);
+        // Bottom metal strip
+        const bottomStrip = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.04, 0.02), metalMid);
+        bottomStrip.position.set(0, -0.48, 0);
+        g.add(bottomStrip);
+        // Handle bars on back (two small cylinders)
+        const handleMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
+        const handleLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 8), handleMat);
+        handleLeft.position.set(-0.1, -0.05, 0.03);
+        g.add(handleLeft);
+        const handleRight = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 8), handleMat);
+        handleRight.position.set(0.1, -0.05, 0.03);
+        g.add(handleRight);
+        g.position.set(0, -0.15, -0.3);
         break;
       }
       case 'flashlight': {
@@ -299,6 +314,195 @@ export class Hands {
     this.toggleProgress = 0;
   }
 
+  private animateMedkitUse(p: number): void {
+    const ease = (t: number) => t * t * (3 - 2 * t); // cubic smoothstep
+
+    if (p < 0.2) {
+      // Phase 1: Both hands come together toward center
+      const t = ease(p / 0.2);
+      this.rightArm.position.set(
+        this.rightRest.x - t * 0.12,
+        this.rightRest.y + t * 0.06,
+        this.rightRest.z - t * 0.08
+      );
+      this.leftArm.position.set(
+        this.leftRest.x + t * 0.12,
+        this.leftRest.y + t * 0.06,
+        this.leftRest.z - t * 0.08
+      );
+      this.rightArm.rotation.x = -t * 0.2;
+      this.leftArm.rotation.x = -t * 0.2;
+      if (this.itemModel) {
+        this.itemModel.rotation.x = this.itemBaseRotationX + t * 0.1;
+      }
+    } else if (p < 0.4) {
+      // Phase 2: Right hand tilts down (opening lid), left holds steady
+      const t = ease((p - 0.2) / 0.2);
+      this.rightArm.position.set(
+        this.rightRest.x - 0.12,
+        this.rightRest.y + 0.06 - t * 0.02,
+        this.rightRest.z - 0.08
+      );
+      this.rightArm.rotation.x = -0.2 + t * 0.4;
+      this.leftArm.position.set(
+        this.leftRest.x + 0.12,
+        this.leftRest.y + 0.06,
+        this.leftRest.z - 0.08
+      );
+      this.leftArm.rotation.x = -0.2;
+      if (this.itemModel) {
+        this.itemModel.rotation.x = this.itemBaseRotationX + 0.1 + t * 0.3;
+      }
+    } else if (p < 0.6) {
+      // Phase 3: Right hand lifts up and away (reaching inside)
+      const t = ease((p - 0.4) / 0.2);
+      this.rightArm.position.set(
+        this.rightRest.x - 0.12 + t * 0.04,
+        this.rightRest.y + 0.04 + t * 0.08,
+        this.rightRest.z - 0.08 - t * 0.05
+      );
+      this.rightArm.rotation.x = 0.2 - t * 0.5;
+      this.leftArm.position.set(
+        this.leftRest.x + 0.12,
+        this.leftRest.y + 0.06,
+        this.leftRest.z - 0.08
+      );
+      this.leftArm.rotation.x = -0.2;
+      if (this.itemModel) {
+        this.itemModel.rotation.x = this.itemBaseRotationX + 0.4;
+      }
+    } else if (p < 0.8) {
+      // Phase 4: Right hand moves to left arm (applying treatment)
+      const t = ease((p - 0.6) / 0.2);
+      this.rightArm.position.set(
+        this.rightRest.x - 0.08 - t * 0.1,
+        this.rightRest.y + 0.12 - t * 0.06,
+        this.rightRest.z - 0.13 + t * 0.02
+      );
+      this.rightArm.rotation.x = -0.3 + t * 0.15;
+      this.leftArm.position.set(
+        this.leftRest.x + 0.12 - t * 0.04,
+        this.leftRest.y + 0.06 - t * 0.02,
+        this.leftRest.z - 0.08
+      );
+      this.leftArm.rotation.x = -0.2 + t * 0.1;
+      if (this.itemModel) {
+        this.itemModel.rotation.x = this.itemBaseRotationX + 0.4 - t * 0.2;
+      }
+    } else {
+      // Phase 5: Both hands return to rest
+      const t = ease((p - 0.8) / 0.2);
+      this.rightArm.position.set(
+        this.rightRest.x - 0.18 + t * 0.18,
+        this.rightRest.y + 0.06 - t * 0.06,
+        this.rightRest.z - 0.11 + t * 0.11
+      );
+      this.rightArm.rotation.x = -0.15 * (1 - t);
+      this.leftArm.position.set(
+        this.leftRest.x + 0.08 - t * 0.08,
+        this.leftRest.y + 0.04 - t * 0.04,
+        this.leftRest.z - 0.08 + t * 0.08
+      );
+      this.leftArm.rotation.x = -0.1 * (1 - t);
+      if (this.itemModel) {
+        this.itemModel.rotation.x = this.itemBaseRotationX + 0.2 * (1 - t);
+      }
+    }
+  }
+
+  private animateBandageUse(p: number): void {
+    const ease = (t: number) => t * t * (3 - 2 * t); // cubic smoothstep
+
+    if (p < 0.15) {
+      // Phase 1: Left arm extends forward (arm being bandaged)
+      const t = ease(p / 0.15);
+      this.leftArm.position.set(
+        this.leftRest.x,
+        this.leftRest.y + t * 0.02,
+        this.leftRest.z - t * 0.15
+      );
+      this.leftArm.rotation.x = -t * 0.3;
+      this.rightArm.position.set(this.rightRest.x, this.rightRest.y, this.rightRest.z);
+      this.rightArm.rotation.x = 0;
+    } else if (p < 0.3) {
+      // Phase 2: Right hand brings bandage to left forearm
+      const t = ease((p - 0.15) / 0.15);
+      this.leftArm.position.set(
+        this.leftRest.x,
+        this.leftRest.y + 0.02,
+        this.leftRest.z - 0.15
+      );
+      this.leftArm.rotation.x = -0.3;
+      this.rightArm.position.set(
+        this.rightRest.x - t * 0.2,
+        this.rightRest.y + t * 0.02,
+        this.rightRest.z - t * 0.12
+      );
+      this.rightArm.rotation.x = -t * 0.2;
+    } else if (p < 0.8) {
+      // Phase 3: Right hand wraps in circular motion around left arm
+      const wrapT = (p - 0.3) / 0.5;
+      const angle = wrapT * Math.PI * 4; // 2 full wraps
+      const radius = 0.04;
+      const centerX = this.leftRest.x + 0.04;
+      const centerY = this.leftRest.y + 0.02;
+      const centerZ = this.leftRest.z - 0.15;
+
+      this.leftArm.position.set(
+        this.leftRest.x,
+        this.leftRest.y + 0.02,
+        this.leftRest.z - 0.15
+      );
+      this.leftArm.rotation.x = -0.3;
+      this.rightArm.position.set(
+        centerX + Math.cos(angle) * radius,
+        centerY + Math.sin(angle) * radius,
+        centerZ - 0.02
+      );
+      this.rightArm.rotation.x = -0.2;
+      // Spin the bandage roll model
+      if (this.itemModel) {
+        this.itemModel.rotation.z = angle * 0.5;
+      }
+    } else if (p < 0.9) {
+      // Phase 4: Right hand pulls away (tearing)
+      const t = ease((p - 0.8) / 0.1);
+      this.leftArm.position.set(
+        this.leftRest.x,
+        this.leftRest.y + 0.02 * (1 - t),
+        this.leftRest.z - 0.15 + t * 0.05
+      );
+      this.leftArm.rotation.x = -0.3 + t * 0.1;
+      this.rightArm.position.set(
+        this.leftRest.x + 0.04 + t * 0.2,
+        this.leftRest.y + 0.02 + t * 0.08,
+        this.leftRest.z - 0.17 + t * 0.05
+      );
+      this.rightArm.rotation.x = -0.2 + t * 0.1;
+      if (this.itemModel) {
+        this.itemModel.rotation.z = Math.PI * 4 * 0.5;
+      }
+    } else {
+      // Phase 5: Both return to rest
+      const t = ease((p - 0.9) / 0.1);
+      this.leftArm.position.set(
+        this.leftRest.x,
+        this.leftRest.y + 0.02 * (1 - t),
+        this.leftRest.z - 0.1 * (1 - t)
+      );
+      this.leftArm.rotation.x = -0.2 * (1 - t);
+      this.rightArm.position.set(
+        this.leftRest.x + 0.24 + t * (this.rightRest.x - this.leftRest.x - 0.24),
+        this.rightRest.y + 0.1 * (1 - t),
+        this.rightRest.z - 0.12 * (1 - t)
+      );
+      this.rightArm.rotation.x = -0.1 * (1 - t);
+      if (this.itemModel) {
+        this.itemModel.rotation.z = Math.PI * 4 * 0.5 * (1 - t);
+      }
+    }
+  }
+
   update(delta: number) {
     if (!this.isVisible) return;
     this.idleTime += delta;
@@ -323,15 +527,27 @@ export class Hands {
       if (this.useProgress >= 1) {
         this.isUsing = false;
         this.useProgress = 0;
+        // Reset item model
+        if (this.itemModel) {
+          this.itemModel.position.copy(this.itemBasePosition);
+          this.itemModel.rotation.x = this.itemBaseRotationX;
+          this.itemModel.rotation.z = 0;
+        }
       } else {
         const p = this.useProgress;
-        // Hands move up and forward in a wrapping/opening motion
-        const lift = Math.sin(p * Math.PI) * 0.08;
-        const fwd = Math.sin(p * Math.PI) * 0.05;
-        this.rightArm.position.set(this.rightRest.x, this.rightRest.y + lift, this.rightRest.z - fwd);
-        this.leftArm.position.set(this.leftRest.x, this.leftRest.y + lift * 0.8, this.leftRest.z - fwd * 0.8);
-        this.rightArm.rotation.x = -lift;
-        this.leftArm.rotation.x = -lift * 0.8;
+        if (this.heldItem === 'medkit') {
+          this.animateMedkitUse(p);
+        } else if (this.heldItem === 'bandage') {
+          this.animateBandageUse(p);
+        } else {
+          // fallback: original simple lift
+          const lift = Math.sin(p * Math.PI) * 0.08;
+          const fwd = Math.sin(p * Math.PI) * 0.05;
+          this.rightArm.position.set(this.rightRest.x, this.rightRest.y + lift, this.rightRest.z - fwd);
+          this.leftArm.position.set(this.leftRest.x, this.leftRest.y + lift * 0.8, this.leftRest.z - fwd * 0.8);
+          this.rightArm.rotation.x = -lift;
+          this.leftArm.rotation.x = -lift * 0.8;
+        }
         return;
       }
     }
@@ -479,6 +695,21 @@ export class Hands {
         arm.position.z += (rest.z - arm.position.z) * sp;
         arm.rotation.x += (0 - arm.rotation.x) * sp;
       }
+    }
+
+    // Shield grip override: both arms hold the shield handles
+    if (this.heldItem === 'shield') {
+      const sp = delta * 8;
+      const leftTarget = new THREE.Vector3(-0.12, -0.18, -0.35);
+      const rightTarget = new THREE.Vector3(0.12, -0.18, -0.35);
+      this.leftArm.position.x += (leftTarget.x - this.leftArm.position.x) * sp;
+      this.leftArm.position.y += (leftTarget.y - this.leftArm.position.y) * sp;
+      this.leftArm.position.z += (leftTarget.z - this.leftArm.position.z) * sp;
+      this.leftArm.rotation.x += (-0.15 - this.leftArm.rotation.x) * sp;
+      this.rightArm.position.x += (rightTarget.x - this.rightArm.position.x) * sp;
+      this.rightArm.position.y += (rightTarget.y - this.rightArm.position.y) * sp;
+      this.rightArm.position.z += (rightTarget.z - this.rightArm.position.z) * sp;
+      this.rightArm.rotation.x += (-0.15 - this.rightArm.rotation.x) * sp;
     }
   }
 }
