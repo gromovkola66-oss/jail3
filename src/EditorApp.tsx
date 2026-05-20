@@ -4,6 +4,7 @@ import { MapEditor, MapData, PlacedObject } from './editor/MapEditor';
 import { PlaytestMode } from './editor/PlaytestMode';
 
 import { EditorUI } from './components/EditorUI';
+import { GuardMenu } from './components/GuardMenu';
 import { EditorObjectType } from './editor/EditorObjects';
 import { CombatState } from './game/Combat';
 import { CameraSystemState } from './game/CameraSystem';
@@ -41,6 +42,12 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [ptLocked, setPtLocked] = useState(false);
   const [ptCameraState, setPtCameraState] = useState<CameraSystemState | null>(null);
   const [ptInventory, setPtInventory] = useState<InventoryState | null>(null);
+
+  // Guard menu state
+  const [ptTeam, setPtTeam] = useState<'guard' | 'prisoner'>('prisoner');
+  const [ptGuardMenuOpen, setPtGuardMenuOpen] = useState(false);
+  const [ptIsWarden, setPtIsWarden] = useState(false);
+  const [ptCellsOpen, setPtCellsOpen] = useState(false);
 
   // === EDITOR ===
   useEffect(() => {
@@ -93,6 +100,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         e.preventDefault();
         stopPlaytest();
       }
+      if (e.code === 'KeyM' && ptTeam === 'guard') {
+        setPtGuardMenuOpen(prev => !prev);
+      }
     };
     document.addEventListener('keydown', handleKey);
 
@@ -104,7 +114,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         playtestRef.current = null;
       }
     };
-  }, [mode]);
+  }, [mode, ptTeam]);
 
   const openTeamSelect = useCallback(() => {
     if (!editorRef.current) return;
@@ -132,6 +142,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   }, []);
 
   const startPlaytest = useCallback((team: 'guard' | 'prisoner') => {
+    setPtTeam(team);
+    setPtGuardMenuOpen(false);
+    setPtIsWarden(false);
+    setPtCellsOpen(false);
     setMode('playtesting');
 
     setTimeout(() => {
@@ -172,6 +186,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     }
     setPtCameraState(null);
     setPtInventory(null);
+    setPtGuardMenuOpen(false);
+    setPtIsWarden(false);
+    setPtCellsOpen(false);
     setMode('editing');
   }, []);
 
@@ -490,6 +507,35 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Guard Menu */}
+          {ptTeam === 'guard' && (
+            <GuardMenu
+              isOpen={ptGuardMenuOpen}
+              isWarden={ptIsWarden}
+              wardenTaken={false}
+              cellsOpen={ptCellsOpen}
+              onBecomeWarden={() => { setPtIsWarden(true); }}
+              onToggleCells={() => {
+                if (ptCellsOpen) {
+                  playtestRef.current?.closeAllDoors();
+                  setPtCellsOpen(false);
+                } else {
+                  playtestRef.current?.openAllDoors();
+                  setPtCellsOpen(true);
+                }
+              }}
+            />
+          )}
+
+          {/* Guard M key hint */}
+          {ptLocked && ptTeam === 'guard' && !ptGuardMenuOpen && !ptCameraState?.inTerminalMode && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+              <div className="bg-black/50 text-gray-300 px-4 py-2 rounded-lg text-sm">
+                <span className="text-yellow-400 font-bold">M</span> - Меню охраны
+              </div>
             </div>
           )}
         </div>

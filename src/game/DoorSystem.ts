@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 export interface Door {
   id: string;
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   isOpen: boolean;
   openPosition: THREE.Vector3;
   closedPosition: THREE.Vector3;
@@ -101,6 +101,36 @@ export class DoorSystem {
     doorMesh.userData.isDoor = true;
     doorMesh.userData.doorId = door.id;
     
+    return door;
+  }
+
+  // Регистрация существующей двери (из редактора)
+  registerDoor(cellIndex: number, group: THREE.Object3D, position: THREE.Vector3, rotationY: number): Door {
+    const doorWidth = 1.2;
+
+    // Направление сдвига перпендикулярно двери
+    const slideX = Math.cos(rotationY) * (doorWidth + 0.3);
+    const slideZ = -Math.sin(rotationY) * (doorWidth + 0.3);
+
+    const closedPos = position.clone();
+    const openPos = position.clone();
+    openPos.x += slideX;
+    openPos.z += slideZ;
+
+    const door: Door = {
+      id: `bars_door_${cellIndex}`,
+      mesh: group,
+      isOpen: false,
+      openPosition: openPos,
+      closedPosition: closedPos,
+      cellIndex
+    };
+
+    this.doors.push(door);
+
+    group.userData.isDoor = true;
+    group.userData.doorId = door.id;
+
     return door;
   }
 
