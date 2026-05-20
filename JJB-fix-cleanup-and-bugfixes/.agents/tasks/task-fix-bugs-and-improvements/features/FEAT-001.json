@@ -18,5 +18,5 @@
     "npx vite build exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": "Node.js 20.19.0 needed to be installed (system had Node 18 from Amazon Linux repo, but Vite 7 requires Node 20+). Downloaded from nodejs.org. npm install, tsc --noEmit, and vite build all pass cleanly."
+  "findings": "Node.js 20 required for Vite 7. All builds pass."
 }

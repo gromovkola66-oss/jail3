@@ -1,25 +1,23 @@
 {
   "id": "FEAT-002",
   "type": "fix",
-  "description": "Fix guard fist colors and add alternating left/right punch animations. Currently guards get skin-colored fists (same as prisoners). Guards should have fists with uniform-colored sleeves (dark blue 0x1e3a6e). Also implement alternating punch animation: hit 1 with right hand, hit 2 with left hand, then cycle back.",
+  "description": "Fix guard fist colors and add alternating left/right punch animations",
   "status": "completed",
   "steps": [
-    "In src/game/Hands.ts: Add a constructor parameter for team ('guard' | 'prisoner' | undefined). When team is 'guard', use sleeve color 0x1e3a6e and cuff color 0x162e58 instead of the prisoner orange (0xff6b35 / 0xe05a2a). Default remains prisoner orange for backward compatibility.",
-    "In src/game/Hands.ts: Add a private field to track which hand punches next (right=0, left=1). Add separate punch logic for left arm vs right arm. On first startPunch() call, animate the right arm (current logic). On second call, animate the left arm (mirror the animation). Toggle the field after each punch completes.",
-    "In src/game/Hands.ts: Implement the left arm punch animation in the update() method. When isPunchingLeft is true, animate the left arm forward (using similar easing as right arm but mirrored on X) while keeping right arm with slight reactive motion.",
-    "In src/game/Game.ts: Pass the team to the Hands constructor. When team is selected (onTeamSelected), recreate the Hands instance with the correct team. Currently hands are created once in the Game constructor - need to update this so that after team selection the hands reflect the correct team color.",
-    "In src/game/Combat.ts: The combat system already references this.hands. Ensure the hands reference stays valid when hands are recreated on team switch."
+    "Add team parameter to Hands constructor with guard/prisoner color logic",
+    "Add alternating punchHand field that toggles between right and left",
+    "Implement mirrored left arm punch animation in update()",
+    "Recreate Hands with team in Game.ts onTeamSelected"
   ],
   "acceptance_criteria": [
-    "When player selects guard team, the first-person fist sleeves are dark blue (0x1e3a6e)",
-    "When player selects prisoner team, the fist sleeves remain orange (0xff6b35)",
-    "Punching alternates between right and left hand animations",
-    "The project compiles without TypeScript errors"
+    "Guards get dark blue sleeves, prisoners get orange",
+    "Punching alternates between right and left hand",
+    "TypeScript compiles without errors"
   ],
   "verification": [
-    "Run npx tsc --noEmit and verify no errors",
-    "Run npx vite build and verify build succeeds"
+    "npx tsc --noEmit exits with code 0",
+    "npx vite build exits with code 0"
   ],
   "blocked_reason": null,
-  "findings": "Implementation straightforward. Combat.ts uses hands by reference passed in constructor, so recreating hands before Combat in onTeamSelected keeps the reference valid. No issues with tsc or vite build."
+  "findings": "Implemented team-based sleeve colors in Hands.ts constructor and alternating punch with mirrored left-arm animation."
 }
