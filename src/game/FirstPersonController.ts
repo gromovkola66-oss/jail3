@@ -74,6 +74,11 @@ export class FirstPersonController {
     console.log('[FPC] setColliders called, count:', colliders.length);
   }
 
+  /** Initialize prevFeetY to current feet position - call after setting spawn position */
+  initFeetPosition() {
+    this.prevFeetY = this.camera.position.y - this.currentHeight;
+  }
+
   private setupEventListeners() {
     document.addEventListener('keydown', this.boundOnKeyDown);
     document.addEventListener('keyup', this.boundOnKeyUp);

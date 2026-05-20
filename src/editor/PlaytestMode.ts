@@ -347,8 +347,10 @@ export class PlaytestMode {
         }
       }
       this.controller.camera.position.y = bestFloorY + 1.7;
+      this.controller.initFeetPosition();
     } else {
       this.controller.camera.position.set(0, 1.7, 0);
+      this.controller.initFeetPosition();
     }
   }
 
@@ -364,12 +366,11 @@ export class PlaytestMode {
         const size = new THREE.Vector3();
         box.getSize(size);
         
-        // Skip flat horizontal surfaces (floors, ceiling panels, stains, cracks)
-        if (size.y < 0.1) return;
         // Skip very thin decorative elements (seams, lines, overlays) - only if BOTH horizontal dims are tiny
         if (size.x < 0.03 && size.z < 0.03) return;
-        // Skip flat ground-level meshes (floor tiles/panels that are both thin and at ground level)
-        if (size.y < 0.15 && box.max.y < 0.2) return;
+        // Skip flat surfaces at ground level (floor tiles, cracks, stains near y=0)
+        // Elevated thin panels (floors at y>0.3) are kept as colliders
+        if (size.y < 0.15 && box.max.y < 0.3) return;
         
         this.colliders.push(box);
       }
