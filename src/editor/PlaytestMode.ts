@@ -4,6 +4,7 @@ import { Hands } from '../game/Hands';
 import { Combat, CombatState } from '../game/Combat';
 import { CameraSystem, CameraSystemState } from '../game/CameraSystem';
 import { InventorySystem, InventoryState } from '../game/InventorySystem';
+import { DoorSystem } from '../game/DoorSystem';
 import { MapData } from './MapEditor';
 import { getObjectById } from './EditorObjects';
 import { soundSystem } from '../game/SoundSystem';
@@ -16,7 +17,10 @@ export class PlaytestMode {
   private combat: Combat;
   private cameraSystem: CameraSystem;
   private inventory: InventorySystem;
+  private doorSystem: DoorSystem;
+  private team: 'guard' | 'prisoner';
   private colliders: THREE.Box3[] = [];
+  private doorColliders: Map<string, THREE.Box3[]> = new Map();
   private inTerminalMode = false;
 
   private isRunning = false;
@@ -141,6 +145,27 @@ export class PlaytestMode {
       this.onCameraSystemUpdate?.(state);
     };
 
+    // Система дверей
+    this.doorSystem = new DoorSystem(this.scene);
+    this.team = team;
+    this.doorSystem.onDoorStateChange = (doorId, isOpen) => {
+      const boxes = this.doorColliders.get(doorId);
+      if (!boxes) return;
+      if (isOpen) {
+        for (const box of boxes) {
+          const idx = this.colliders.indexOf(box);
+          if (idx >= 0) this.colliders.splice(idx, 1);
+        }
+      } else {
+        for (const box of boxes) {
+          if (!this.colliders.includes(box)) {
+            this.colliders.push(box);
+          }
+        }
+      }
+      this.controller.setColliders(this.colliders);
+    };
+
     // Освещение
     this.scene.add(new THREE.AmbientLight(0x808080, 1.5));
     const sun = new THREE.DirectionalLight(0xffffff, 0.55);
@@ -198,6 +223,14 @@ export class PlaytestMode {
       if (this.cameraSystem.terminalHighlighted) {
         const playerPos = this.controller.camera.position;
         this.cameraSystem.enterTerminalMode(playerPos);
+        return;
+      }
+      // Door interaction (guards only)
+      if (this.team === 'guard') {
+        const { canInteract, door } = this.doorSystem.canInteract(this.controller.camera.position);
+        if (canInteract && door) {
+          this.doorSystem.toggleDoor(door.id);
+        }
       }
     }
   };
@@ -206,6 +239,7 @@ export class PlaytestMode {
     let spawnPoint: THREE.Vector3 | null = null;
     const spawnType = team === 'guard' ? 'spawn_guard' : 'spawn_prisoner';
     let cameraCount = 0;
+    let doorCellIndex = 0;
 
     for (const objData of mapData.objects) {
       const objType = getObjectById(objData.type);
@@ -261,6 +295,26 @@ export class PlaytestMode {
           objData.groupId ?? 1,
           objData.label || `Камера ${cameraCount}`
         );
+        continue;
+      }
+
+      // Решётка-дверь — регистрируем в системе дверей
+      if (objData.type === 'bars_door') {
+        const obj = objType.create();
+        obj.position.set(objData.position.x, objData.position.y, objData.position.z);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        obj.updateMatrixWorld(true);
+
+        const prevLen = this.colliders.length;
+        this.addColliders(obj);
+        const doorBoxes = this.colliders.slice(prevLen);
+
+        const rotRad = THREE.MathUtils.degToRad(objData.rotation);
+        const pos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
+        const door = this.doorSystem.registerDoor(doorCellIndex, obj, pos, rotRad);
+        this.doorColliders.set(door.id, doorBoxes);
+        doorCellIndex++;
         continue;
       }
 
@@ -376,6 +430,9 @@ export class PlaytestMode {
 
       this.combat.update(delta);
 
+      // Door animation
+      this.doorSystem.update(delta);
+
       // Terminal raycast
       this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.controller.camera);
       this.cameraSystem.checkRaycast(this.raycaster);
@@ -404,6 +461,23 @@ export class PlaytestMode {
 
   inventorySetHovered(index: number | null) {
     this.inventory.setHoveredSlot(index);
+  }
+
+  openAllDoors() {
+    this.doorSystem.openAllDoors();
+  }
+
+  closeAllDoors() {
+    this.doorSystem.closeAllDoors();
+  }
+
+  hasDoors(): boolean {
+    return this.doorSystem.getDoors().length > 0;
+  }
+
+  areCellsOpen(): boolean {
+    const doors = this.doorSystem.getDoors();
+    return doors.length > 0 && doors.every(d => d.isOpen);
   }
 
   dispose() {
