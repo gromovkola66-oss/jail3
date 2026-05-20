@@ -161,6 +161,12 @@ export class PlaytestMode {
     // Если охрана — даём оружие
     if (team === 'guard') {
       this.combat.giveWeapon();
+      // Sync inventory equipped slot to weapon
+      const state = this.inventory.getState();
+      const weaponIdx = state.slots.findIndex(s => s?.type === 'weapon');
+      if (weaponIdx >= 0) {
+        this.inventory.equipSlot(weaponIdx);
+      }
     }
 
     // Коллизии
