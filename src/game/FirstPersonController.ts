@@ -140,16 +140,21 @@ export class FirstPersonController {
   }
 
   private _collisionLogCount = 0;
+
   private checkCollision(newPosition: THREE.Vector3): boolean {
     const h = this.currentHeight;
-    // Raise the bottom of the player box by 0.25 so floor-level geometry
-    // (tiles, panels, thin slabs sitting at y~0) does not block horizontal movement.
-    const feetClearance = 0.25;
+    // Small feet clearance to avoid z-fighting with floor seams but catch real objects
+    const feetClearance = 0.05;
+    const feetY = newPosition.y - h;
     const playerBox = new THREE.Box3(
-      new THREE.Vector3(newPosition.x - 0.3, newPosition.y - h + feetClearance, newPosition.z - 0.3),
+      new THREE.Vector3(newPosition.x - 0.3, feetY + feetClearance, newPosition.z - 0.3),
       new THREE.Vector3(newPosition.x + 0.3, newPosition.y + 0.2, newPosition.z + 0.3)
     );
     for (const collider of this.colliders) {
+      // Skip colliders the player is currently standing on top of.
+      // If the collider's top is at or below the player's feet + tolerance, it should
+      // not block horizontal movement (player is walking on it).
+      if (collider.max.y <= feetY + 0.1) continue;
       if (playerBox.intersectsBox(collider)) {
         if (this._collisionLogCount < 3) {
           console.log('[FPC] COLLISION DETECTED with collider:', collider.min.toArray(), collider.max.toArray());
@@ -201,8 +206,27 @@ export class FirstPersonController {
     // Vertical
     this.camera.position.y += this.velocity.y * delta;
 
-    // Floor check
-    if (this.camera.position.y < this.currentHeight) {
+    // Check if player lands on top of a collider
+    const feetY = this.camera.position.y - this.currentHeight;
+    let groundY = 0; // default floor level
+    for (const collider of this.colliders) {
+      // Check if player is horizontally overlapping this collider
+      if (this.camera.position.x + 0.3 > collider.min.x &&
+          this.camera.position.x - 0.3 < collider.max.x &&
+          this.camera.position.z + 0.3 > collider.min.z &&
+          this.camera.position.z - 0.3 < collider.max.z) {
+        // Player's feet are at or below the top of this collider and within range, and falling
+        if (feetY <= collider.max.y && feetY > collider.max.y - 0.5 && this.velocity.y <= 0) {
+          if (collider.max.y > groundY) {
+            groundY = collider.max.y;
+          }
+        }
+      }
+    }
+
+    // Apply ground (either collider top or floor at y=0)
+    const minCameraY = groundY + this.currentHeight;
+    if (this.camera.position.y < minCameraY) {
       // Fall damage
       if (this.wasInAir) {
         const fallDist = this.lastGroundY - this.camera.position.y;
@@ -213,7 +237,7 @@ export class FirstPersonController {
         this.onLand?.();
         this.wasInAir = false;
       }
-      this.camera.position.y = this.currentHeight;
+      this.camera.position.y = minCameraY;
       this.velocity.y = 0;
       this.canJump = true;
       this.lastGroundY = this.camera.position.y;

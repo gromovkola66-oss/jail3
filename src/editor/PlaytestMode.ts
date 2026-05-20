@@ -254,9 +254,8 @@ export class PlaytestMode {
         if (size.y < 0.1) return;
         // Skip very thin decorative elements (seams, lines, overlays)
         if (size.x < 0.03 || size.y < 0.03 || size.z < 0.03) return;
-        // Skip floor-level colliders whose top is at or below ground clearance.
-        // These are floor tiles/panels that sit at ground level and would block walking.
-        if (box.max.y <= 0.25) return;
+        // Skip flat ground-level meshes (floor tiles/panels that are both thin and at ground level)
+        if (size.y < 0.15 && box.max.y < 0.2) return;
         
         this.colliders.push(box);
       }
