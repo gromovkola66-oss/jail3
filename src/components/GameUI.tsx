@@ -50,7 +50,7 @@ export const GameUI = ({ fps, position, isLocked, combatState, team, teamName, d
       </div>
 
       {/* Меню паузы / Инструкции */}
-      {!isLocked && (
+      {!isLocked && !inventoryState?.isOpen && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 pointer-events-auto">
           <div className="text-center text-white">
             <h1 className="text-4xl font-bold mb-4 text-red-500">

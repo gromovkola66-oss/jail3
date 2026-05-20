@@ -368,7 +368,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           )}
 
           {/* Click to start */}
-          {!ptLocked && (
+          {!ptLocked && !ptInventory?.isOpen && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto">
               <div className="text-center text-white">
                 <h2 className="text-3xl font-bold mb-4">🧪 Тестирование карты</h2>
@@ -514,7 +514,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           )}
 
           {/* Guard Menu */}
-          {ptTeam === 'guard' && (
+          {ptTeam === 'guard' && ptLocked && (
             <GuardMenu
               isOpen={ptGuardMenuOpen}
               isWarden={ptIsWarden}
