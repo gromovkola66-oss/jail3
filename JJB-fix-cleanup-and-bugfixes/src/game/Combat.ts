@@ -315,7 +315,9 @@ export class Combat {
     
     for (let i = 0; i < this.droppedWeapons.length; i++) {
       const droppedWeapon = this.droppedWeapons[i];
-      const distance = playerPos.distanceTo(droppedWeapon.position);
+      const dx = playerPos.x - droppedWeapon.position.x;
+      const dz = playerPos.z - droppedWeapon.position.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
       
       if (distance < pickupRange) {
         // Подбираем оружие
