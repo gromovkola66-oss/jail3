@@ -141,12 +141,12 @@ export class CameraSystem {
   }
 
   private findTerminalGroup(mesh: THREE.Object3D): THREE.Object3D | null {
-    let current: THREE.Object3D | null = mesh;
-    while (current) {
-      for (const terminal of this.terminals) {
-        if (terminal.mesh === current) return current;
+    for (const terminal of this.terminals) {
+      let current: THREE.Object3D | null = mesh;
+      while (current) {
+        if (current === terminal.mesh) return terminal.mesh;
+        current = current.parent;
       }
-      current = current.parent;
     }
     return null;
   }
@@ -160,7 +160,7 @@ export class CameraSystem {
         const originalMaterial = child.material;
         const cloned = mat.clone();
         cloned.emissive.set(0x44ffaa);
-        cloned.emissiveIntensity = 0.005;
+        cloned.emissiveIntensity = 0.003;
         child.material = cloned;
         this.highlightedMeshes.push({
           mesh: child,
