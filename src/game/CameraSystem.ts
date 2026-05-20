@@ -95,7 +95,7 @@ export class CameraSystem {
     const terminalMeshes: THREE.Object3D[] = [];
     for (const terminal of this.terminals) {
       terminal.mesh.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
+        if (child instanceof THREE.Mesh && !child.userData.isTerminalScreen) {
           terminalMeshes.push(child);
         }
       });
@@ -160,7 +160,7 @@ export class CameraSystem {
         const originalMaterial = child.material;
         const cloned = mat.clone();
         cloned.emissive.set(0x44ffaa);
-        cloned.emissiveIntensity = 0.015;
+        cloned.emissiveIntensity = 0.005;
         child.material = cloned;
         this.highlightedMeshes.push({
           mesh: child,
