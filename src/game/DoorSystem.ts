@@ -178,7 +178,7 @@ export class DoorSystem {
     let minDistance = this.interactionRange;
     
     for (const door of this.doors) {
-      const distance = position.distanceTo(door.mesh.position);
+      const distance = position.distanceTo(door.closedPosition);
       if (distance < minDistance) {
         minDistance = distance;
         nearest = door;

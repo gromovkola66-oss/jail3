@@ -35,6 +35,7 @@ export class PlaytestMode {
   public onCombatUpdate?: (state: CombatState) => void;
   public onCameraSystemUpdate?: (state: CameraSystemState) => void;
   public onInventoryUpdate?: (state: InventoryState) => void;
+  public onDoorStateUpdate?: (cellsOpen: boolean) => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -164,6 +165,7 @@ export class PlaytestMode {
         }
       }
       this.controller.setColliders(this.colliders);
+      this.onDoorStateUpdate?.(this.doorSystem.getDoors().every(d => d.isOpen));
     };
 
     // Освещение
