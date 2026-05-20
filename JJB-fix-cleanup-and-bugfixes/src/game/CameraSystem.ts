@@ -162,7 +162,7 @@ export class CameraSystem {
           originalEmissiveIntensity: mat.emissiveIntensity,
         });
         mat.emissive.set(0x44ffaa);
-        mat.emissiveIntensity = 0.01;
+        mat.emissiveIntensity = 0.3;
       }
     });
   }
@@ -170,7 +170,7 @@ export class CameraSystem {
   private clearHighlight() {
     for (const entry of this.highlightedMeshes) {
       const mat = entry.mesh.material as THREE.MeshStandardMaterial;
-      if (mat) {
+      if (mat && mat.emissive) {
         mat.emissive.copy(entry.originalEmissive);
         mat.emissiveIntensity = entry.originalEmissiveIntensity;
       }
