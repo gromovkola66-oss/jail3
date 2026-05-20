@@ -61,13 +61,18 @@ export class PrisonMapDetailed {
 
   // === ВСПОМОГАТЕЛЬНЫЕ ===
   
-  private box(x: number, y: number, z: number, w: number, h: number, d: number, mat: string, collider = false) {
+  private box(x: number, y: number, z: number, w: number, h: number, d: number, mat: string, _collider = false) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), this.mats[mat]);
     m.position.set(x, y, z);
     m.castShadow = true;
     m.receiveShadow = true;
     this.group.add(m);
-    if (collider) this.colliders.push(new THREE.Box3().setFromObject(m));
+    // Always create collider - compute directly from known position and size
+    const halfW = w / 2, halfH = h / 2, halfD = d / 2;
+    this.colliders.push(new THREE.Box3(
+      new THREE.Vector3(x - halfW, y - halfH, z - halfD),
+      new THREE.Vector3(x + halfW, y + halfH, z + halfD)
+    ));
     return m;
   }
 

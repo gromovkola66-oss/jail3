@@ -131,6 +131,7 @@ export class PlaytestMode {
       console.log('[PlaytestMode] First collider min/max:', first.min.toArray(), first.max.toArray());
     }
     this.controller.setColliders(this.colliders);
+    console.log('[PlaytestMode] Colliders:', this.colliders.length);
     this.combat.setMapColliders(this.colliders);
 
     // E key for terminal interaction
@@ -244,20 +245,18 @@ export class PlaytestMode {
   }
 
   private addColliders(group: THREE.Object3D) {
-    group.updateMatrixWorld(true);
+    // Force full scene matrix update so all world matrices are correct
+    this.scene.updateMatrixWorld(true);
+    
     group.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.geometry) {
-        child.geometry.computeBoundingBox();
-        const geoBB = child.geometry.boundingBox;
-        if (!geoBB) return;
-        
-        const box = geoBB.clone();
-        box.applyMatrix4(child.matrixWorld);
+      if (child instanceof THREE.Mesh) {
+        const box = new THREE.Box3().setFromObject(child);
+        if (box.isEmpty()) return;
         
         const size = new THREE.Vector3();
         box.getSize(size);
         
-        // Skip very tiny decorations (smaller than 5cm on all axes)
+        // Skip very tiny decorations
         if (size.x < 0.05 && size.y < 0.05 && size.z < 0.05) return;
         
         this.colliders.push(box);
