@@ -482,7 +482,7 @@ export class Combat {
         testBoxY.translate(new THREE.Vector3(0, deltaY, 0));
         let landedOnObject = false;
         for (const collider of this.mapColliders) {
-          if (testBoxY.intersectsBox(collider)) {
+          if (testBoxY.intersectsBox(collider) && collider.max.y <= dropped.position.y) {
             // Land on top of this collider
             dropped.position.y = collider.max.y + 0.1;
             dropped.userData.velocityY = 0;

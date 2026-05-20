@@ -230,12 +230,6 @@ export class CameraSystem {
     this.emitState();
   }
 
-  forceUnhighlight() {
-    this.clearHighlight();
-    this._terminalHighlighted = false;
-    this.emitState();
-  }
-
   selectCamera(index: number | null) {
     if (index !== null && index >= 0 && index < this._activeCameras.length) {
       this._selectedCameraIndex = index;
