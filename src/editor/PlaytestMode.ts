@@ -188,6 +188,7 @@ export class PlaytestMode {
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
         obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
         this.scene.add(obj);
+        obj.updateMatrixWorld(true);
         this.addColliders(obj);
         const terminalPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         this.cameraSystem.registerTerminal(
@@ -223,6 +224,7 @@ export class PlaytestMode {
       obj.position.set(objData.position.x, objData.position.y, objData.position.z);
       obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
       this.scene.add(obj);
+      obj.updateMatrixWorld(true);
 
       // Коллизии — берём bounding box каждого меша
       this.addColliders(obj);
@@ -246,7 +248,7 @@ export class PlaytestMode {
 
         // Коллизия только для объектов больше 0.15м хотя бы по 2 осям
         const bigAxes = (size.x > 0.15 ? 1 : 0) + (size.y > 0.15 ? 1 : 0) + (size.z > 0.15 ? 1 : 0);
-        if (bigAxes >= 2) {
+        if (bigAxes >= 1) {
           this.colliders.push(box);
         }
       }
