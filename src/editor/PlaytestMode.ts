@@ -250,7 +250,7 @@ export class PlaytestMode {
       // Скрипты — не рендерим визуально, но обрабатываем логику
       if (objData.type === 'spawn_prisoner' || objData.type === 'spawn_guard') {
         if (objData.type === spawnType && !spawnPoint) {
-          spawnPoint = new THREE.Vector3(objData.position.x, 1.7, objData.position.z);
+          spawnPoint = new THREE.Vector3(objData.position.x, objData.position.y + 1.7, objData.position.z);
         }
         continue;
       }
