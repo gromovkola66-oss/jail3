@@ -392,22 +392,44 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           {/* Inventory Wheel */}
           {ptInventory?.isOpen && (
             <div className="fixed inset-0 bg-black/60 pointer-events-auto">
+              <style>{`
+                @keyframes slotAppear {
+                  from { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+                  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                }
+                @keyframes pulseGlow {
+                  0%, 100% { box-shadow: 0 0 15px rgba(250,204,21,0.3); }
+                  50% { box-shadow: 0 0 25px rgba(250,204,21,0.6); }
+                }
+                @keyframes ringRotate {
+                  from { transform: translate(-50%, -50%) rotate(0deg); }
+                  to { transform: translate(-50%, -50%) rotate(360deg); }
+                }
+              `}</style>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <div className="w-80 h-80 rounded-full border-2 border-white/20 relative">
+                <div className="w-[420px] h-[420px] rounded-full border-2 border-white/20 relative bg-gradient-radial from-gray-900/80 to-transparent">
+                  {/* Rotating dashed ring decoration */}
+                  <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[430px] h-[430px] pointer-events-none" style={{ animation: 'ringRotate 20s linear infinite' }}>
+                    <circle cx="215" cy="215" r="210" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeDasharray="10 5" />
+                  </svg>
                   {ptInventory.slots.map((item, index) => {
                     const angle = (index * Math.PI * 2) / 6 - Math.PI / 2;
                     const isHighlighted = ptInventory.hoveredSlot === index || ptInventory.equippedSlot === index;
                     return (
                       <div
                         key={index}
-                        className={`absolute -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full flex flex-col items-center justify-center cursor-pointer transition-all ${
+                        className={`absolute w-20 h-20 rounded-full flex flex-col items-center justify-center cursor-pointer transition-all ${
                           isHighlighted
-                            ? 'border-2 border-yellow-400 bg-gray-700/90 scale-110'
-                            : 'border-2 border-gray-600/50 bg-gray-800/80 hover:border-gray-400'
+                            ? 'border-2 border-yellow-400 bg-gradient-to-b from-gray-700/90 to-gray-900/90 scale-110 shadow-[0_0_20px_rgba(250,204,21,0.4)]'
+                            : 'border-2 border-gray-600/50 bg-gradient-to-b from-gray-700/90 to-gray-900/90 hover:border-gray-400'
                         }`}
                         style={{
-                          top: `calc(50% + ${Math.sin(angle) * 140}px)`,
-                          left: `calc(50% + ${Math.cos(angle) * 140}px)`,
+                          top: `calc(50% + ${Math.sin(angle) * 170}px)`,
+                          left: `calc(50% + ${Math.cos(angle) * 170}px)`,
+                          animation: 'slotAppear 0.3s ease forwards',
+                          animationDelay: `${index * 0.05}s`,
+                          opacity: 0,
+                          ...(isHighlighted ? { animation: 'slotAppear 0.3s ease forwards, pulseGlow 1.5s ease-in-out infinite' } : {}),
                         }}
                         onClick={() => playtestRef.current?.inventoryEquipSlot(index)}
                         onMouseEnter={() => playtestRef.current?.inventorySetHovered(index)}
@@ -425,9 +447,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     );
                   })}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                    <div className="text-white font-bold">
+                    <div className="text-white font-bold text-lg">
                       {ptInventory.slots[ptInventory.equippedSlot]?.name || 'Пусто'}
                     </div>
+                    {ptInventory.slots[ptInventory.hoveredSlot ?? -1] && (
+                      <div className="text-gray-400 text-sm mt-1">
+                        {ptInventory.slots[ptInventory.hoveredSlot!]?.name}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="text-center mt-4 text-gray-400 text-sm">
