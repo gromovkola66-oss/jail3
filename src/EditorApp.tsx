@@ -171,6 +171,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       pt.onInventoryUpdate = (state) => {
         setPtInventory({ ...state });
       };
+      pt.onDoorStateUpdate = (cellsOpen) => {
+        setPtCellsOpen(cellsOpen);
+      };
 
       pt.start();
     }, 100);
