@@ -308,6 +308,7 @@ export class Game {
 
     // Телепортируем
     camera.position.copy(info.spawnPoint);
+    this.controller.initFeetPosition();
 
     // Если охрана — даём оружие и add to inventory
     if (info.team === 'guard') {
@@ -321,6 +322,7 @@ export class Game {
 
   private respawnPlayer() {
     this.controller.camera.position.copy(this.spawnPoint);
+    this.controller.initFeetPosition();
     this.combat.respawn();
     
     if (this.currentTeam === 'guard') {
