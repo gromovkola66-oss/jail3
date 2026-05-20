@@ -117,12 +117,12 @@ export class PrisonMapDetailed {
       this.box(cx, y, cz - 0.7, 1.75, 0.05, 0.05, 'metal');
     }
     // Нижняя койка
-    this.box(cx, 0.5, cz - 1.5, 1.75, 0.08, 1.55, 'metal');
+    this.box(cx, 0.5, cz - 1.5, 1.75, 0.08, 1.55, 'metal', true);
     this.box(cx, 0.6, cz - 1.5, 1.6, 0.12, 1.5, 'mattress');
     this.box(cx, 0.7, cz - 2.1, 0.6, 0.1, 0.3, 'pillow');
     this.box(cx, 0.62, cz - 0.9, 1.4, 0.08, 0.8, 'blanket');
     // Верхняя койка
-    this.box(cx, 1.7, cz - 1.5, 1.75, 0.08, 1.55, 'metal');
+    this.box(cx, 1.7, cz - 1.5, 1.75, 0.08, 1.55, 'metal', true);
     this.box(cx, 1.8, cz - 1.5, 1.6, 0.12, 1.5, 'mattress');
     this.box(cx, 1.9, cz - 2.1, 0.6, 0.1, 0.3, 'pillow');
     // Лестница
@@ -131,7 +131,7 @@ export class PrisonMapDetailed {
     for (let s = 0; s < 4; s++) this.box(cx + 1, 0.3 + s * 0.45, cz - 1.5, 0.04, 0.04, 0.5, 'metal');
 
     // === ТУАЛЕТ ===
-    this.box(cx + 1.2, 0.22, cz + 1.5, 0.5, 0.44, 0.5, 'metalLight');
+    this.box(cx + 1.2, 0.22, cz + 1.5, 0.5, 0.44, 0.5, 'metalLight', true);
     this.box(cx + 1.2, 0.48, cz + 1.6, 0.44, 0.08, 0.35, 'metalLight');
     this.box(cx + 1.2, 0.65, cz + 1.82, 0.38, 0.35, 0.14, 'metalLight');
 
@@ -141,7 +141,7 @@ export class PrisonMapDetailed {
     this.box(cx + 1.45, 1.45, cz + 0.5, 0.02, 0.35, 0.28, 'mirror');
 
     // === СТОЛ + ТАБУРЕТ ===
-    this.box(cx - 1.35, 0.85, cz + 0.5, 0.7, 0.05, 0.5, 'metalLight');
+    this.box(cx - 1.35, 0.85, cz + 0.5, 0.7, 0.05, 0.5, 'metalLight', true);
     this.box(cx - 1.05, 0.42, cz + 0.5, 0.05, 0.85, 0.05, 'metal');
     this.cyl(cx - 1.35, 0.52, cz + 1.2, 0.18, 0.18, 0.04, 'metalLight');
     this.cyl(cx - 1.35, 0.27, cz + 1.2, 0.03, 0.04, 0.5, 'metal');
@@ -198,7 +198,7 @@ export class PrisonMapDetailed {
 
     // Скамейки
     for (const z of [-8, 0, 8]) {
-      this.box(cx + 4, 0.5, z, 0.5, 0.05, 2, 'metalLight');
+      this.box(cx + 4, 0.5, z, 0.5, 0.05, 2, 'metalLight', true);
       this.box(cx + 4, 0.25, z - 0.8, 0.4, 0.5, 0.05, 'metal');
       this.box(cx + 4, 0.25, z + 0.8, 0.4, 0.5, 0.05, 'metal');
     }
@@ -253,7 +253,7 @@ export class PrisonMapDetailed {
     // Оружейные шкафы
     for (let j = 0; j < 3; j++) {
       const sz = az - 2 + j * 2;
-      this.box(ax + 3, 1.2, sz, 0.4, 2.4, 0.8, 'metalBlue');
+      this.box(ax + 3, 1.2, sz, 0.4, 2.4, 0.8, 'metalBlue', true);
       this.box(ax + 2.75, 1.2, sz, 0.05, 2.2, 0.7, 'metalLight');
       this.box(ax + 2.7, 1.2, sz + 0.2, 0.03, 0.15, 0.03, 'metal');
       this.box(ax + 3.1, 2, sz, 0.08, 0.1, 0.6, 'metal');
@@ -261,7 +261,7 @@ export class PrisonMapDetailed {
     }
 
     // Стол
-    this.box(ax - 1, 0.9, az, 2, 0.08, 3, 'wood');
+    this.box(ax - 1, 0.9, az, 2, 0.08, 3, 'wood', true);
     for (const dx of [-0.8, 0.8]) for (const dz of [-1.3, 1.3]) {
       this.box(ax - 1 + dx, 0.45, az + dz, 0.08, 0.9, 0.08, 'wood');
     }
@@ -269,7 +269,7 @@ export class PrisonMapDetailed {
     this.box(ax - 0.8, 1.05, az + 0.5, 0.4, 0.2, 0.3, 'ammo');
 
     // Стеллаж
-    this.box(ax - 3.5, 1.5, az, 0.4, 3, 3, 'metal');
+    this.box(ax - 3.5, 1.5, az, 0.4, 3, 3, 'metal', true);
     for (let y = 0.8; y <= 2.5; y += 0.6) this.box(ax - 3.3, y, az, 0.35, 0.05, 2.8, 'metalLight');
     for (let j = 0; j < 3; j++) this.cyl(ax - 3.2, 2.0, az - 1 + j, 0.15, 0.18, 0.2, 'metal');
 
@@ -306,7 +306,7 @@ export class PrisonMapDetailed {
     // Скамейки
     for (let j = 0; j < 3; j++) {
       const bz = yz + 3 + j * 3;
-      this.box(yx + 5, 0.5, bz, 2.5, 0.1, 0.5, 'wood');
+      this.box(yx + 5, 0.5, bz, 2.5, 0.1, 0.5, 'wood', true);
       this.box(yx + 5.3, 1, bz, 0.1, 0.6, 0.5, 'wood');
       this.box(yx + 4, 0.25, bz, 0.08, 0.5, 0.08, 'metal');
       this.box(yx + 6, 0.25, bz, 0.08, 0.5, 0.08, 'metal');
@@ -321,7 +321,7 @@ export class PrisonMapDetailed {
     // Вышка
     const tx = yx + 7, tz = yz - 7;
     for (const [dx, dz] of [[-1,-1],[1,-1],[-1,1],[1,1]] as [number,number][]) {
-      this.box(tx + dx, 3, tz + dz, 0.15, 6, 0.15, 'metal');
+      this.box(tx + dx, 3, tz + dz, 0.15, 6, 0.15, 'metal', true);
     }
     this.box(tx, 5.5, tz, 2.5, 0.1, 2.5, 'metalLight');
     this.box(tx, 6.3, tz - 1.2, 2.4, 0.8, 0.05, 'metal');

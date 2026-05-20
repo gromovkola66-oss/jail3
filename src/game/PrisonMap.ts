@@ -188,6 +188,7 @@ export class PrisonMap {
       const bedBase1 = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 1.8), metalMat);
       bedBase1.position.set(cellX, 0.5, cellZ - 1.5);
       this.group.add(bedBase1);
+      this.colliders.push(new THREE.Box3().setFromObject(bedBase1));
       const mattress1 = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 1.7), mattressMat);
       mattress1.position.set(cellX, 0.6, cellZ - 1.5);
       mattress1.castShadow = true;
@@ -200,6 +201,7 @@ export class PrisonMap {
       const bedBase2 = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 1.8), metalMat);
       bedBase2.position.set(cellX, 1.7, cellZ - 1.5);
       this.group.add(bedBase2);
+      this.colliders.push(new THREE.Box3().setFromObject(bedBase2));
       const mattress2 = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.12, 1.7), mattressMat);
       mattress2.position.set(cellX, 1.8, cellZ - 1.5);
       mattress2.castShadow = true;
@@ -221,6 +223,7 @@ export class PrisonMap {
       toiletBase.position.set(cellX + 1.2, 0.2, cellZ + 1.5);
       toiletBase.castShadow = true;
       this.group.add(toiletBase);
+      this.colliders.push(new THREE.Box3().setFromObject(toiletBase));
       const toiletSeat = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.08, 0.4), toiletMat);
       toiletSeat.position.set(cellX + 1.2, 0.45, cellZ + 1.55);
       this.group.add(toiletSeat);
@@ -345,6 +348,7 @@ export class PrisonMap {
       rack.position.set(armoryX + 2, 1, armoryZ - 2 + i * 2);
       rack.castShadow = true;
       this.group.add(rack);
+      this.colliders.push(new THREE.Box3().setFromObject(rack));
 
       // "Оружие" на стойке
       const weapon = new THREE.Mesh(
@@ -363,6 +367,7 @@ export class PrisonMap {
     table.position.set(armoryX - 1, 0.9, armoryZ);
     table.castShadow = true;
     this.group.add(table);
+    this.colliders.push(new THREE.Box3().setFromObject(table));
 
     // Ножки стола
     for (let dx of [-0.8, 0.8]) {
