@@ -125,7 +125,6 @@ export class PlaytestMode {
     }
 
     // Коллизии
-    alert('[PlaytestMode] Colliders: ' + this.colliders.length);
     this.controller.setColliders(this.colliders);
     this.combat.setMapColliders(this.colliders);
 
@@ -251,8 +250,10 @@ export class PlaytestMode {
         const size = new THREE.Vector3();
         box.getSize(size);
         
-        // Skip very tiny decorations
-        if (size.x < 0.05 && size.y < 0.05 && size.z < 0.05) return;
+        // Skip flat horizontal surfaces (floors, ceiling panels, stains, cracks)
+        if (size.y < 0.1) return;
+        // Skip very thin decorative elements (seams, lines, overlays)
+        if (size.x < 0.03 || size.y < 0.03 || size.z < 0.03) return;
         
         this.colliders.push(box);
       }

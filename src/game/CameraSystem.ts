@@ -160,7 +160,7 @@ export class CameraSystem {
         const originalMaterial = child.material;
         const cloned = mat.clone();
         cloned.emissive.set(0x44ffaa);
-        cloned.emissiveIntensity = 0.003;
+        cloned.emissiveIntensity = 0.4;
         child.material = cloned;
         this.highlightedMeshes.push({
           mesh: child,
