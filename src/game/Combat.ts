@@ -553,9 +553,11 @@ export class Combat {
   public tryPickupItem(camera: THREE.Camera): { picked: boolean; itemType: string } | null {
     const playerPos = camera.position;
     const pickupRange = 2;
+    const maxYDistance = 2;
 
     for (let i = 0; i < this.droppedItems.length; i++) {
       const item = this.droppedItems[i];
+      if (Math.abs(playerPos.y - item.position.y) > maxYDistance) continue;
       const dx = playerPos.x - item.position.x;
       const dz = playerPos.z - item.position.z;
       const distance = Math.sqrt(dx * dx + dz * dz);

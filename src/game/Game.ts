@@ -8,6 +8,7 @@ import { RoundSystem, RoundState } from './RoundSystem';
 import { DoorSystem, Door } from './DoorSystem';
 import { CameraSystem, CameraSystemState } from './CameraSystem';
 import { InventorySystem, InventoryState } from './InventorySystem';
+import { ITEM_DEFS } from './ItemDefs';
 import { soundSystem } from './SoundSystem';
 
 export interface DoorInteractionState {
@@ -278,15 +279,7 @@ export class Game {
   private tryPickupDroppedItem() {
     const pickedUp = this.combat.tryPickupItem(this.controller.camera);
     if (pickedUp) {
-      const itemDefs: Record<string, { id: string; name: string; icon: string; type: 'melee' | 'tool' | 'consumable' }> = {
-        'item_shiv': { id: 'item_shiv', name: '\u0417\u0430\u0442\u043e\u0447\u043a\u0430', icon: '\u{1F5E1}\uFE0F', type: 'melee' },
-        'item_baton': { id: 'item_baton', name: '\u0414\u0443\u0431\u0438\u043d\u043a\u0430', icon: '\u{1F3CF}', type: 'melee' },
-        'item_shield': { id: 'item_shield', name: '\u0429\u0438\u0442', icon: '\u{1F6E1}\uFE0F', type: 'melee' },
-        'item_flashlight': { id: 'item_flashlight', name: '\u0424\u043e\u043d\u0430\u0440\u0438\u043a', icon: '\u{1F526}', type: 'tool' },
-        'item_medkit': { id: 'item_medkit', name: '\u0410\u043f\u0442\u0435\u0447\u043a\u0430', icon: '\u{1F48A}', type: 'consumable' },
-        'item_bandage': { id: 'item_bandage', name: '\u0411\u0438\u043d\u0442\u044b', icon: '\u{1FA79}', type: 'consumable' },
-      };
-      const def = itemDefs[pickedUp.itemType];
+      const def = ITEM_DEFS[pickedUp.itemType];
       if (def) {
         this.inventory.addItem(def);
       }

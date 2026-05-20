@@ -148,7 +148,31 @@ export class Hands {
   }
 
   setWalking(w: boolean) { this.isWalking = w; }
-  setVisible(v: boolean) { this.isVisible = v; this.group.visible = v; }
+  setVisible(v: boolean) {
+    this.isVisible = v;
+    this.group.visible = v;
+    if (!v) this.resetAnimationState();
+  }
+
+  resetAnimationState() {
+    this.isUsing = false;
+    this.useProgress = 0;
+    this.isMeleeAttacking = false;
+    this.meleeProgress = 0;
+    this.isPunching = false;
+    this.punchProgress = 0;
+    this.isTogglingFlashlight = false;
+    this.toggleProgress = 0;
+    if (this.itemModel) {
+      this.itemModel.position.copy(this.itemBasePosition);
+      this.itemModel.rotation.x = this.itemBaseRotationX;
+      this.itemModel.rotation.z = 0;
+    }
+    this.leftArm.position.copy(this.leftRest);
+    this.leftArm.rotation.x = 0;
+    this.rightArm.position.copy(this.rightRest);
+    this.rightArm.rotation.x = 0;
+  }
 
   startPunch() {
     if (this.isPunching) return;
@@ -157,6 +181,9 @@ export class Hands {
   }
 
   setHeldItem(item: string) {
+    // Reset any in-progress animations before switching items
+    this.resetAnimationState();
+
     // Remove old item model
     if (this.itemModel) {
       this.group.remove(this.itemModel);
