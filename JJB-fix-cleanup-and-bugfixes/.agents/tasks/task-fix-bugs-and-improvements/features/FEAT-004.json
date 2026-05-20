@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Implement weapon drop physics with gravity, floor collision, and map collision. Editor objects already have collision in PlaytestMode.",
+  "status": "completed",
+  "steps": [
+    "Added mapColliders field and setMapColliders() to Combat",
+    "createDroppedWeapon initializes physics userData (velocity, grounded)",
+    "dropWeapon() gives initial throw velocity based on camera direction",
+    "update() replaces floating animation with gravity + floor + wall collision",
+    "Game.ts and PlaytestMode.ts wire up mapColliders"
+  ],
+  "acceptance_criteria": [
+    "Dropped weapons fall to the ground with gravity",
+    "Dropped weapons collide with walls",
+    "Players can walk through dropped weapons",
+    "Editor objects already have collision (confirmed existing implementation)",
+    "TypeScript compiles without errors"
+  ],
+  "verification": [
+    "npx tsc --noEmit exits with code 0",
+    "npx vite build exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": "Physics simulation with gravity (15 m/s^2), floor collision at y=0.1, horizontal map collision using Box3, and friction damping. Editor collision was already implemented in PlaytestMode.ts addColliders()."
+}

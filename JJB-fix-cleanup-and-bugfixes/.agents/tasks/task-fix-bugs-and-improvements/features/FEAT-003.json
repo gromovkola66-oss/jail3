@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Fix inventory close on slot click, terminal unhighlight, and automatic weapon hold-to-fire",
+  "status": "completed",
+  "steps": [
+    "InventorySystem.equipSlot() now closes inventory if open",
+    "CameraSystem highlight intensity increased from 0.01 to 0.3 for visibility",
+    "Combat.ts now tracks isMouseDown and fires continuously in update() while held",
+    "Weapon fireRate increased from 10 to 13"
+  ],
+  "acceptance_criteria": [
+    "Clicking any inventory slot closes the inventory",
+    "Terminal highlight is visible and clears on look-away",
+    "Holding mouse button fires the weapon continuously",
+    "TypeScript compiles without errors"
+  ],
+  "verification": [
+    "npx tsc --noEmit exits with code 0",
+    "npx vite build exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": "All three fixes implemented and verified."
+}
