@@ -135,7 +135,11 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setMode('playtesting');
 
     setTimeout(() => {
-      if (!playtestContainerRef.current || !savedMapRef.current) return;
+      if (!playtestContainerRef.current || !savedMapRef.current) {
+        console.error('[EditorApp] ABORT: container=', !!playtestContainerRef.current, 'mapData=', !!savedMapRef.current);
+        return;
+      }
+      console.log('[EditorApp] Creating PlaytestMode with', savedMapRef.current.objects.length, 'objects');
 
       const pt = new PlaytestMode(playtestContainerRef.current, savedMapRef.current, team);
       playtestRef.current = pt;
