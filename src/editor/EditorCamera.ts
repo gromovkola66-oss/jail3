@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 export class EditorCamera {
   public camera: THREE.PerspectiveCamera;
+  public onFreeFlyChanged?: (active: boolean) => void;
   
   private moveForward = false;
   private moveBackward = false;
@@ -16,6 +17,7 @@ export class EditorCamera {
   private speed = 15;
   private fastSpeed = 30;
   private shiftPressed = false;
+  private freeFlyMode = false;
 
   private boundKeyDown = this.onKeyDown.bind(this);
   private boundKeyUp = this.onKeyUp.bind(this);
@@ -23,6 +25,7 @@ export class EditorCamera {
   private boundMouseUp = this.onMouseUp.bind(this);
   private boundMouseMove = this.onMouseMove.bind(this);
   private boundWheel = this.onWheel.bind(this);
+  private boundPointerLockChange = this.onPointerLockChange.bind(this);
 
   constructor() {
     this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -39,6 +42,7 @@ export class EditorCamera {
     document.addEventListener('mouseup', this.boundMouseUp);
     document.addEventListener('mousemove', this.boundMouseMove);
     document.addEventListener('wheel', this.boundWheel);
+    document.addEventListener('pointerlockchange', this.boundPointerLockChange);
   }
 
   private onKeyDown(e: KeyboardEvent) {
@@ -50,6 +54,15 @@ export class EditorCamera {
       case 'KeyQ': this.moveDown = true; break;
       case 'KeyE': this.moveUp = true; break;
       case 'Space': this.moveUp = true; break;
+      case 'KeyZ':
+        this.freeFlyMode = !this.freeFlyMode;
+        if (this.freeFlyMode) {
+          document.body.requestPointerLock();
+        } else {
+          document.exitPointerLock();
+        }
+        this.onFreeFlyChanged?.(this.freeFlyMode);
+        break;
       case 'ShiftLeft':
       case 'ShiftRight':
         this.shiftPressed = true;
@@ -86,7 +99,7 @@ export class EditorCamera {
   }
 
   private onMouseMove(e: MouseEvent) {
-    if (!this.isRightMouseDown) return;
+    if (!this.isRightMouseDown && !this.freeFlyMode) return;
 
     const sensitivity = 0.003;
     
@@ -114,8 +127,10 @@ export class EditorCamera {
     
     const forward = new THREE.Vector3();
     this.camera.getWorldDirection(forward);
-    forward.y = 0;
-    forward.normalize();
+    if (!this.freeFlyMode) {
+      forward.y = 0;
+      forward.normalize();
+    }
     
     const right = new THREE.Vector3();
     right.crossVectors(forward, new THREE.Vector3(0, 1, 0));
@@ -133,6 +148,17 @@ export class EditorCamera {
     this.camera.position.add(velocity);
   }
 
+  private onPointerLockChange() {
+    if (!document.pointerLockElement && this.freeFlyMode) {
+      this.freeFlyMode = false;
+      this.onFreeFlyChanged?.(false);
+    }
+  }
+
+  get isFreeFlyActive(): boolean {
+    return this.freeFlyMode;
+  }
+
   dispose() {
     document.removeEventListener('keydown', this.boundKeyDown);
     document.removeEventListener('keyup', this.boundKeyUp);
@@ -140,5 +166,6 @@ export class EditorCamera {
     document.removeEventListener('mouseup', this.boundMouseUp);
     document.removeEventListener('mousemove', this.boundMouseMove);
     document.removeEventListener('wheel', this.boundWheel);
+    document.removeEventListener('pointerlockchange', this.boundPointerLockChange);
   }
 }
