@@ -31,6 +31,9 @@ export class PlaytestMode {
   private raycaster = new THREE.Raycaster();
   private boundOnResize = this.onResize.bind(this);
 
+  // Dropped items (non-weapon pickables)
+  private droppedItems: { mesh: THREE.Group; itemType: string; position: THREE.Vector3 }[] = [];
+
   public onStatsUpdate?: (fps: number, pos: THREE.Vector3) => void;
   public onCombatUpdate?: (state: CombatState) => void;
   public onCameraSystemUpdate?: (state: CameraSystemState) => void;
@@ -120,6 +123,12 @@ export class PlaytestMode {
       this.inventory.removeItem('weapon_ak47');
     };
 
+    // Handle consumed items removal
+    this.combat.onItemUsed = (itemId: string) => {
+      this.inventory.removeItem(itemId);
+      this.combat.unequipItem();
+    };
+
     // Inventory system
     this.inventory = new InventorySystem();
     this.inventory.onStateChange = (state) => {
@@ -133,9 +142,14 @@ export class PlaytestMode {
     };
     this.inventory.onEquip = (item) => {
       if (item && item.type === 'weapon') {
+        this.combat.unequipItem();
         this.combat.takeOutWeapon();
+      } else if (item && (item.type === 'melee' || item.type === 'tool' || item.type === 'consumable')) {
+        this.combat.putAwayWeapon();
+        this.combat.equipItem(item.id);
       } else {
         this.combat.putAwayWeapon();
+        this.combat.unequipItem();
       }
     };
 
@@ -227,6 +241,8 @@ export class PlaytestMode {
         this.cameraSystem.enterTerminalMode(playerPos);
         return;
       }
+      // Item pickup
+      this.tryPickupItem();
       // Door interaction (guards only)
       if (this.team === 'guard') {
         const { canInteract, door } = this.doorSystem.canInteract(this.controller.camera.position);
@@ -236,6 +252,41 @@ export class PlaytestMode {
       }
     }
   };
+
+  private tryPickupItem() {
+    const playerPos = this.controller.camera.position;
+    const pickupRange = 2;
+
+    for (let i = 0; i < this.droppedItems.length; i++) {
+      const item = this.droppedItems[i];
+      const dx = playerPos.x - item.position.x;
+      const dz = playerPos.z - item.position.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+
+      if (distance < pickupRange) {
+        // Define item data
+        const itemDefs: Record<string, { id: string; name: string; icon: string; type: 'melee' | 'tool' | 'consumable' }> = {
+          'item_shiv': { id: 'item_shiv', name: '\u0417\u0430\u0442\u043e\u0447\u043a\u0430', icon: '\u{1F5E1}\uFE0F', type: 'melee' },
+          'item_baton': { id: 'item_baton', name: '\u0414\u0443\u0431\u0438\u043d\u043a\u0430', icon: '\u{1F3CF}', type: 'melee' },
+          'item_shield': { id: 'item_shield', name: '\u0429\u0438\u0442', icon: '\u{1F6E1}\uFE0F', type: 'melee' },
+          'item_flashlight': { id: 'item_flashlight', name: '\u0424\u043e\u043d\u0430\u0440\u0438\u043a', icon: '\u{1F526}', type: 'tool' },
+          'item_medkit': { id: 'item_medkit', name: '\u0410\u043f\u0442\u0435\u0447\u043a\u0430', icon: '\u{1F48A}', type: 'consumable' },
+          'item_bandage': { id: 'item_bandage', name: '\u0411\u0438\u043d\u0442\u044b', icon: '\u{1FA79}', type: 'consumable' },
+        };
+
+        const def = itemDefs[item.itemType];
+        if (!def) continue;
+
+        const added = this.inventory.addItem(def);
+        if (added) {
+          this.scene.remove(item.mesh);
+          this.droppedItems.splice(i, 1);
+          soundSystem.playPickup();
+        }
+        return;
+      }
+    }
+  }
 
   private loadMap(mapData: MapData, team: 'guard' | 'prisoner') {
     let spawnPoint: THREE.Vector3 | null = null;
@@ -260,6 +311,19 @@ export class PlaytestMode {
         this.combat.createDroppedWeaponAt(
           new THREE.Vector3(objData.position.x, objData.position.y + 0.5, objData.position.z)
         );
+        continue;
+      }
+
+      // Item pickups (melee, tools, consumables)
+      if (objData.type === 'item_shiv' || objData.type === 'item_baton' ||
+          objData.type === 'item_shield' || objData.type === 'item_flashlight' ||
+          objData.type === 'item_medkit' || objData.type === 'item_bandage') {
+        const itemPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
+        const obj = objType.create();
+        obj.position.copy(itemPos);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        this.droppedItems.push({ mesh: obj, itemType: objData.type, position: itemPos });
         continue;
       }
 

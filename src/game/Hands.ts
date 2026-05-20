@@ -15,6 +15,25 @@ export class Hands {
   private readonly punchDuration = 0.35;
   private punchHand: 'right' | 'left' = 'right';
 
+  // Item holding state
+  private heldItem: 'none' | 'shiv' | 'baton' | 'shield' | 'flashlight' | 'medkit' | 'bandage' = 'none';
+  private itemModel: THREE.Group | null = null;
+
+  // Melee attack animation
+  private isMeleeAttacking = false;
+  private meleeProgress = 0;
+  private readonly meleeDuration = 0.4;
+
+  // Use animation (consumables)
+  private isUsing = false;
+  private useProgress = 0;
+  private useDuration = 2;
+
+  // Flashlight toggle animation
+  private isTogglingFlashlight = false;
+  private toggleProgress = 0;
+  private readonly toggleDuration = 0.2;
+
   // Руки вытянуты вперёд, рукава уходят за нижний край экрана
   private readonly leftRest = new THREE.Vector3(-0.24, -0.2, -0.5);
   private readonly rightRest = new THREE.Vector3(0.24, -0.2, -0.5);
@@ -133,9 +152,231 @@ export class Hands {
     this.punchProgress = 0;
   }
 
+  setHeldItem(item: string) {
+    // Remove old item model
+    if (this.itemModel) {
+      this.group.remove(this.itemModel);
+      this.itemModel = null;
+    }
+
+    const itemMap: Record<string, 'none' | 'shiv' | 'baton' | 'shield' | 'flashlight' | 'medkit' | 'bandage'> = {
+      'item_shiv': 'shiv',
+      'item_baton': 'baton',
+      'item_shield': 'shield',
+      'item_flashlight': 'flashlight',
+      'item_medkit': 'medkit',
+      'item_bandage': 'bandage',
+      'none': 'none',
+      'fists': 'none',
+    };
+    this.heldItem = itemMap[item] || 'none';
+
+    if (this.heldItem === 'none') return;
+
+    // Create item model in first-person view
+    this.itemModel = this.createItemModel(this.heldItem);
+    if (this.itemModel) {
+      this.group.add(this.itemModel);
+    }
+  }
+
+  private createItemModel(type: string): THREE.Group {
+    const g = new THREE.Group();
+    const metalDark = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.3, metalness: 0.85 });
+    const metalMid = new THREE.MeshStandardMaterial({ color: 0x5a5a5a, roughness: 0.35, metalness: 0.75 });
+    const metalShiny = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.15, metalness: 0.9 });
+
+    switch (type) {
+      case 'shiv': {
+        // Small blade with tape handle - positioned in right hand
+        const tape = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.015, 0.14), metalShiny);
+        blade.position.set(0, 0, -0.1);
+        g.add(blade);
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.08), tape);
+        handle.position.set(0, 0, 0.01);
+        g.add(handle);
+        g.position.set(0.24, -0.22, -0.55);
+        g.rotation.x = -0.3;
+        break;
+      }
+      case 'baton': {
+        // Black rubber stick with grip
+        const rubber = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.95 });
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.013, 0.4, 8), rubber);
+        body.rotation.x = Math.PI / 2;
+        body.position.set(0, 0, -0.15);
+        g.add(body);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.02, 8), metalDark);
+        cap.rotation.x = Math.PI / 2;
+        cap.position.set(0, 0, 0.05);
+        g.add(cap);
+        g.position.set(0.24, -0.2, -0.5);
+        g.rotation.x = -0.2;
+        break;
+      }
+      case 'shield': {
+        // Large transparent panel with frame - held in left arm
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 0.02), metalDark);
+        g.add(frame);
+        const glass = new THREE.MeshStandardMaterial({ color: 0xaaddff, roughness: 0.1, transparent: true, opacity: 0.35 });
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.4, 0.01), glass);
+        panel.position.set(0, 0.05, 0.01);
+        g.add(panel);
+        g.position.set(-0.15, -0.1, -0.55);
+        g.rotation.y = 0.1;
+        break;
+      }
+      case 'flashlight': {
+        // Cylindrical flashlight with lens
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.16, 8), metalDark);
+        body.rotation.x = Math.PI / 2;
+        body.position.set(0, 0, -0.05);
+        g.add(body);
+        const head = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.015, 0.04, 8), metalMid);
+        head.rotation.x = Math.PI / 2;
+        head.position.set(0, 0, -0.15);
+        g.add(head);
+        const lens = new THREE.MeshStandardMaterial({ color: 0xffffee, emissive: 0xffffaa, emissiveIntensity: 0.3 });
+        const lensMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.005, 8), lens);
+        lensMesh.rotation.x = Math.PI / 2;
+        lensMesh.position.set(0, 0, -0.17);
+        g.add(lensMesh);
+        g.position.set(0.22, -0.2, -0.5);
+        g.rotation.x = -0.1;
+        break;
+      }
+      case 'medkit': {
+        // Small box with cross
+        const boxMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.6 });
+        const crossMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.5 });
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.12), boxMat);
+        g.add(box);
+        const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.005, 0.025), crossMat);
+        crossH.position.set(0, 0.051, 0);
+        g.add(crossH);
+        const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.005, 0.06), crossMat);
+        crossV.position.set(0, 0.051, 0);
+        g.add(crossV);
+        g.position.set(0.2, -0.25, -0.5);
+        break;
+      }
+      case 'bandage': {
+        // Roll of white cloth
+        const bandageMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.85 });
+        const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.05, 12), bandageMat);
+        roll.rotation.z = Math.PI / 2;
+        g.add(roll);
+        g.position.set(0.2, -0.22, -0.5);
+        break;
+      }
+    }
+    return g;
+  }
+
+  startMeleeAttack() {
+    if (this.isMeleeAttacking || this.isPunching) return;
+    this.isMeleeAttacking = true;
+    this.meleeProgress = 0;
+  }
+
+  startUseAnimation(type: 'medkit' | 'bandage') {
+    if (this.isUsing) return;
+    this.isUsing = true;
+    this.useProgress = 0;
+    this.useDuration = type === 'medkit' ? 2 : 3;
+  }
+
+  startFlashlightToggle() {
+    if (this.isTogglingFlashlight) return;
+    this.isTogglingFlashlight = true;
+    this.toggleProgress = 0;
+  }
+
   update(delta: number) {
     if (!this.isVisible) return;
     this.idleTime += delta;
+
+    // Flashlight toggle animation
+    if (this.isTogglingFlashlight) {
+      this.toggleProgress += delta / this.toggleDuration;
+      if (this.toggleProgress >= 1) {
+        this.isTogglingFlashlight = false;
+        this.toggleProgress = 0;
+      } else {
+        const p = this.toggleProgress;
+        const flick = Math.sin(p * Math.PI) * 0.05;
+        this.rightArm.position.set(this.rightRest.x, this.rightRest.y + flick, this.rightRest.z - flick);
+        if (this.itemModel) this.itemModel.rotation.x += flick * 2;
+        return;
+      }
+    }
+
+    // Consumable use animation
+    if (this.isUsing) {
+      this.useProgress += delta / this.useDuration;
+      if (this.useProgress >= 1) {
+        this.isUsing = false;
+        this.useProgress = 0;
+      } else {
+        const p = this.useProgress;
+        // Hands move up and forward in a wrapping/opening motion
+        const lift = Math.sin(p * Math.PI) * 0.08;
+        const fwd = Math.sin(p * Math.PI) * 0.05;
+        this.rightArm.position.set(this.rightRest.x, this.rightRest.y + lift, this.rightRest.z - fwd);
+        this.leftArm.position.set(this.leftRest.x, this.leftRest.y + lift * 0.8, this.leftRest.z - fwd * 0.8);
+        this.rightArm.rotation.x = -lift;
+        this.leftArm.rotation.x = -lift * 0.8;
+        return;
+      }
+    }
+
+    // Melee attack animation
+    if (this.isMeleeAttacking) {
+      this.meleeProgress += delta / this.meleeDuration;
+      if (this.meleeProgress >= 1) {
+        this.isMeleeAttacking = false;
+        this.meleeProgress = 0;
+      } else {
+        const p = this.meleeProgress;
+        const ease = (t: number) => 1 - (1 - t) ** 3;
+        if (this.heldItem === 'shiv') {
+          // Slashing motion (right to left)
+          if (p < 0.25) {
+            const t = ease(p / 0.25);
+            this.rightArm.position.set(this.rightRest.x + t * 0.08, this.rightRest.y + t * 0.04, this.rightRest.z + t * 0.05);
+            this.rightArm.rotation.z = t * 0.3;
+          } else if (p < 0.5) {
+            const t = ease((p - 0.25) / 0.25);
+            this.rightArm.position.set(this.rightRest.x + 0.08 - t * 0.16, this.rightRest.y + 0.04 - t * 0.02, this.rightRest.z + 0.05 - t * 0.2);
+            this.rightArm.rotation.z = 0.3 - t * 0.6;
+          } else {
+            const t = ease((p - 0.5) / 0.5);
+            this.rightArm.position.set(this.rightRest.x - 0.08 + t * 0.08, this.rightRest.y + 0.02 * (1 - t), this.rightRest.z - 0.15 + t * 0.15);
+            this.rightArm.rotation.z = -0.3 * (1 - t);
+          }
+        } else {
+          // Overhead swing (baton)
+          if (p < 0.3) {
+            const t = ease(p / 0.3);
+            this.rightArm.position.set(this.rightRest.x, this.rightRest.y + t * 0.1, this.rightRest.z + t * 0.1);
+            this.rightArm.rotation.x = t * 0.5;
+          } else if (p < 0.55) {
+            const t = ease((p - 0.3) / 0.25);
+            this.rightArm.position.set(this.rightRest.x, this.rightRest.y + 0.1 - t * 0.12, this.rightRest.z + 0.1 - t * 0.3);
+            this.rightArm.rotation.x = 0.5 - t * 0.9;
+          } else {
+            const t = ease((p - 0.55) / 0.45);
+            this.rightArm.position.set(this.rightRest.x, this.rightRest.y - 0.02 + t * 0.02, this.rightRest.z - 0.2 + t * 0.2);
+            this.rightArm.rotation.x = -0.4 * (1 - t);
+          }
+        }
+        // Left arm stays still during melee
+        this.leftArm.position.copy(this.leftRest);
+        this.leftArm.rotation.x = 0;
+        return;
+      }
+    }
 
     if (this.isPunching) {
       this.punchProgress += delta / this.punchDuration;

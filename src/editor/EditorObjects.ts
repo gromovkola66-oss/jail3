@@ -129,7 +129,8 @@ export interface EditorObjectType {
   id: string;
   name: string;
   icon: string;
-  category: 'walls' | 'items' | 'lighting' | 'scripts' | 'building';
+  category: 'walls' | 'items' | 'lighting' | 'scripts' | 'building' | 'things';
+  description?: string;
   create: () => THREE.Group;
 }
 
@@ -2189,7 +2190,8 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
     }
   },
   {
-    id: 'weapon_ak47', name: 'AK-47 (подбираемый)', icon: '🔫', category: 'scripts',
+    id: 'weapon_ak47', name: 'AK-47 (подбираемый)', icon: '🔫', category: 'things',
+    description: 'Автомат AK-47. Подбирается любой командой по нажатию E.',
     create: () => {
       const g = new THREE.Group();
       // Круг подсветки на полу
@@ -2230,6 +2232,204 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       return g;
     }
   },
+
+  // ============ ВЕЩИ (новые предметы) ============
+  {
+    id: 'item_shiv', name: 'Заточка', icon: '🗡️', category: 'things',
+    description: 'Самодельная заточка. Наносит x2 урон кулаков. Подбирается по E.',
+    create: () => {
+      const g = new THREE.Group();
+      // Glow ring on floor
+      const glowMat = new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0xff4444, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.025, 8, 20), glowMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.01, 0);
+      g.add(ring);
+      // Blade (sharpened metal shard)
+      g.add(pos(box(0.015, 0.02, 0.18, M.metalShiny), 0, 0.45, -0.05));
+      // Blade edge taper
+      g.add(pos(box(0.01, 0.015, 0.06, M.metalLight), 0, 0.45, -0.17));
+      // Tape-wrapped handle
+      const tapeMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
+      g.add(pos(box(0.025, 0.025, 0.1, tapeMat), 0, 0.45, 0.08));
+      // Tape wraps (rings)
+      for (let i = 0; i < 4; i++) {
+        g.add(pos(box(0.03, 0.03, 0.015, M.metalDark), 0, 0.45, 0.04 + i * 0.025));
+      }
+      // Pickup arrow
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0xff4444, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.025, 0.12, 0.025, pickupMat), 0, 0.7, 0));
+      g.add(pos(box(0.08, 0.025, 0.025, pickupMat), 0, 0.78, 0));
+      g.userData.scriptType = 'item_pickup';
+      g.userData.itemType = 'item_shiv';
+      return g;
+    }
+  },
+  {
+    id: 'item_baton', name: 'Дубинка', icon: '🏏', category: 'things',
+    description: 'Резиновая дубинка. Наносит x1.5 урон кулаков. Подбирается по E.',
+    create: () => {
+      const g = new THREE.Group();
+      // Glow ring on floor
+      const glowMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x4488ff, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.025, 8, 20), glowMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.01, 0);
+      g.add(ring);
+      // Baton body (rubber, black)
+      const rubberMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.95 });
+      g.add(pos(cyl(0.025, 0.022, 0.45, rubberMat), 0, 0.5, 0));
+      // Grip ridges
+      for (let i = 0; i < 5; i++) {
+        g.add(pos(cyl(0.028, 0.028, 0.015, M.metalDark), 0, 0.3 + i * 0.025, 0));
+      }
+      // Handle cap
+      g.add(pos(cyl(0.03, 0.03, 0.02, M.metalMid), 0, 0.27, 0));
+      // Tip cap
+      g.add(pos(cyl(0.024, 0.02, 0.02, M.metalMid), 0, 0.73, 0));
+      // Pickup arrow
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x4488ff, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.025, 0.12, 0.025, pickupMat), 0, 0.9, 0));
+      g.add(pos(box(0.08, 0.025, 0.025, pickupMat), 0, 0.98, 0));
+      g.userData.scriptType = 'item_pickup';
+      g.userData.itemType = 'item_baton';
+      return g;
+    }
+  },
+  {
+    id: 'item_shield', name: 'Щит', icon: '🛡️', category: 'things',
+    description: 'Бунтовой щит. Блокирует весь лобовой урон. Подбирается по E.',
+    create: () => {
+      const g = new THREE.Group();
+      // Glow ring on floor
+      const glowMat = new THREE.MeshStandardMaterial({ color: 0x44aaff, emissive: 0x44aaff, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.025, 8, 20), glowMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.01, 0);
+      g.add(ring);
+      // Shield frame (tall rectangle with rounded top)
+      g.add(pos(box(0.6, 0.9, 0.04, M.metalDark), 0, 0.7, 0));
+      // Transparent center panel
+      const shieldGlass = new THREE.MeshStandardMaterial({ color: 0xaaddff, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.4 });
+      g.add(pos(box(0.5, 0.5, 0.02, shieldGlass), 0, 0.85, 0.02));
+      // Frame edges
+      g.add(pos(box(0.04, 0.9, 0.05, M.metalMid), -0.3, 0.7, 0));
+      g.add(pos(box(0.04, 0.9, 0.05, M.metalMid), 0.3, 0.7, 0));
+      g.add(pos(box(0.64, 0.04, 0.05, M.metalMid), 0, 1.15, 0));
+      g.add(pos(box(0.64, 0.04, 0.05, M.metalMid), 0, 0.25, 0));
+      // Handle (back)
+      g.add(pos(box(0.08, 0.15, 0.04, M.metalDark), 0, 0.6, -0.04));
+      // Pickup arrow
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0x44aaff, emissive: 0x44aaff, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.025, 0.12, 0.025, pickupMat), 0, 1.4, 0));
+      g.add(pos(box(0.08, 0.025, 0.025, pickupMat), 0, 1.48, 0));
+      g.userData.scriptType = 'item_pickup';
+      g.userData.itemType = 'item_shield';
+      return g;
+    }
+  },
+  {
+    id: 'item_flashlight', name: 'Фонарик', icon: '🔦', category: 'things',
+    description: 'Тактический фонарик. ЛКМ включает/выключает свет. Подбирается по E.',
+    create: () => {
+      const g = new THREE.Group();
+      // Glow ring on floor
+      const glowMat = new THREE.MeshStandardMaterial({ color: 0xffdd44, emissive: 0xffdd44, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.025, 8, 20), glowMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.01, 0);
+      g.add(ring);
+      // Flashlight body (cylinder)
+      g.add(pos(cyl(0.025, 0.025, 0.22, M.metalDark), 0, 0.45, 0));
+      // Head (wider section)
+      g.add(pos(cyl(0.035, 0.025, 0.06, M.metalMid), 0, 0.57, 0));
+      // Lens
+      const lensMat = new THREE.MeshStandardMaterial({ color: 0xffffee, emissive: 0xffffaa, emissiveIntensity: 0.3, transparent: true, opacity: 0.8 });
+      g.add(pos(cyl(0.033, 0.033, 0.01, lensMat), 0, 0.6, 0));
+      // Grip texture (rings)
+      for (let i = 0; i < 6; i++) {
+        g.add(pos(cyl(0.027, 0.027, 0.008, M.metalMid), 0, 0.36 + i * 0.02, 0));
+      }
+      // Tail cap button
+      g.add(pos(cyl(0.015, 0.015, 0.015, M.metalLight), 0, 0.33, 0));
+      // Pickup arrow
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0xffdd44, emissive: 0xffdd44, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.025, 0.12, 0.025, pickupMat), 0, 0.75, 0));
+      g.add(pos(box(0.08, 0.025, 0.025, pickupMat), 0, 0.83, 0));
+      g.userData.scriptType = 'item_pickup';
+      g.userData.itemType = 'item_flashlight';
+      return g;
+    }
+  },
+  {
+    id: 'item_medkit', name: 'Аптечка', icon: '💊', category: 'things',
+    description: 'Аптечка первой помощи. Восстанавливает +50 HP за 2 секунды.',
+    create: () => {
+      const g = new THREE.Group();
+      // Glow ring on floor
+      const glowMat = new THREE.MeshStandardMaterial({ color: 0x44ff44, emissive: 0x44ff44, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.025, 8, 20), glowMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.01, 0);
+      g.add(ring);
+      // Box body (white)
+      const boxMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.6 });
+      g.add(pos(box(0.25, 0.15, 0.18, boxMat), 0, 0.45, 0));
+      // Red cross on top
+      const crossMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.5 });
+      g.add(pos(box(0.12, 0.005, 0.04, crossMat), 0, 0.528, 0));
+      g.add(pos(box(0.04, 0.005, 0.12, crossMat), 0, 0.528, 0));
+      // Red cross on front
+      g.add(pos(box(0.08, 0.03, 0.005, crossMat), 0, 0.45, 0.091));
+      g.add(pos(box(0.03, 0.08, 0.005, crossMat), 0, 0.45, 0.091));
+      // Latch
+      g.add(pos(box(0.04, 0.02, 0.015, M.metalLight), 0, 0.39, 0.09));
+      // Edges
+      g.add(pos(box(0.26, 0.01, 0.19, M.metalLight), 0, 0.375, 0));
+      // Pickup arrow
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0x44ff44, emissive: 0x44ff44, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.025, 0.12, 0.025, pickupMat), 0, 0.7, 0));
+      g.add(pos(box(0.08, 0.025, 0.025, pickupMat), 0, 0.78, 0));
+      g.userData.scriptType = 'item_pickup';
+      g.userData.itemType = 'item_medkit';
+      return g;
+    }
+  },
+  {
+    id: 'item_bandage', name: 'Бинты', icon: '🩹', category: 'things',
+    description: 'Рулон бинтов. Медленно восстанавливает +20 HP за 7 секунд.',
+    create: () => {
+      const g = new THREE.Group();
+      // Glow ring on floor
+      const glowMat = new THREE.MeshStandardMaterial({ color: 0x88ff88, emissive: 0x88ff88, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.025, 8, 20), glowMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.01, 0);
+      g.add(ring);
+      // Bandage roll (cylinder, white)
+      const bandageMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.85 });
+      const roll = cyl(0.06, 0.06, 0.08, bandageMat);
+      roll.rotation.x = Math.PI / 2;
+      roll.position.set(0, 0.45, 0);
+      g.add(roll);
+      // Inner hole
+      const innerMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.9 });
+      const inner = cyl(0.02, 0.02, 0.085, innerMat);
+      inner.rotation.x = Math.PI / 2;
+      inner.position.set(0, 0.45, 0);
+      g.add(inner);
+      // Trailing bandage strip
+      g.add(pos(box(0.04, 0.005, 0.12, bandageMat), 0.04, 0.42, 0.08));
+      // Pickup arrow
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0x88ff88, emissive: 0x88ff88, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.025, 0.12, 0.025, pickupMat), 0, 0.65, 0));
+      g.add(pos(box(0.08, 0.025, 0.025, pickupMat), 0, 0.73, 0));
+      g.userData.scriptType = 'item_pickup';
+      g.userData.itemType = 'item_bandage';
+      return g;
+    }
+  },
+
   {
     id: 'terminal', name: 'Терминал камер', icon: '🖥️', category: 'scripts',
     create: () => {
