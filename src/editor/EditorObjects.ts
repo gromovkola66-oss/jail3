@@ -2298,7 +2298,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
   },
   {
     id: 'item_shield', name: 'Щит', icon: '🛡️', category: 'things',
-    description: 'Бунтовой щит. Блокирует весь лобовой урон. Подбирается по E.',
+    description: '\u0411\u0443\u043d\u0442\u043e\u0432\u043e\u0439 \u0449\u0438\u0442. \u041f\u043e\u043b\u043d\u043e\u0441\u0442\u044c\u044e \u0431\u043b\u043e\u043a\u0438\u0440\u0443\u0435\u0442 \u0432\u0435\u0441\u044c \u0432\u0445\u043e\u0434\u044f\u0449\u0438\u0439 \u0443\u0440\u043e\u043d. \u041f\u043e\u0434\u0431\u0438\u0440\u0430\u0435\u0442\u0441\u044f \u043f\u043e E.',
     create: () => {
       const g = new THREE.Group();
       // Glow ring on floor

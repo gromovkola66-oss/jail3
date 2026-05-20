@@ -54,6 +54,7 @@ export class Combat {
   private shieldEquipped = false;
   private bandageRegenTimer = 0;
   private bandageRegenActive = false;
+  private bandageHealAccumulator = 0;
 
   // Callbacks
   public onStateChange?: (state: CombatState) => void;
@@ -453,6 +454,15 @@ export class Combat {
     this.hands.setHeldItem(itemType);
     this.shieldEquipped = itemType === 'item_shield';
 
+    // Set melee damage multipliers
+    if (itemType === 'item_shiv') {
+      this.punchDamage = 40; // x2 of base 20
+    } else if (itemType === 'item_baton') {
+      this.punchDamage = 30; // x1.5 of base 20
+    } else {
+      this.punchDamage = 20; // reset to base
+    }
+
     // If flashlight was on and we're switching away, remove the light
     if (itemType !== 'item_flashlight' && this.flashlight) {
       this.camera.remove(this.flashlight);
@@ -471,6 +481,7 @@ export class Combat {
     }
     this.heldItemType = 'none';
     this.shieldEquipped = false;
+    this.punchDamage = 20; // reset to base
     this.hands.setHeldItem('none');
   }
 
@@ -514,7 +525,7 @@ export class Combat {
   takeDamage(damage: number) {
     if (this.isDead) return;
 
-    // Shield blocks all frontal damage
+    // Shield blocks all damage while equipped
     if (this.shieldEquipped) {
       soundSystem.playShieldBlock();
       return;
@@ -534,6 +545,9 @@ export class Combat {
   private die() {
     this.isDead = true;
     if (this.onDeath) this.onDeath();
+
+    // Clean up equipped item (flashlight, shield, etc.)
+    this.unequipItem();
     
     // Выбрасываем оружие при смерти (check storedWeapon too)
     if (this.weapon || this.storedWeapon) {
@@ -550,6 +564,11 @@ export class Combat {
   respawn() {
     this.hp = this.maxHp;
     this.isDead = false;
+    this.heldItemType = 'none';
+    this.shieldEquipped = false;
+    this.bandageRegenActive = false;
+    this.bandageHealAccumulator = 0;
+    this.isUsingConsumable = false;
     this.notifyStateChange();
   }
 
@@ -579,20 +598,27 @@ export class Combat {
 
     // Consumable use timer
     if (this.isUsingConsumable) {
-      this.consumableTimer += delta;
-      if (this.consumableTimer >= this.consumableDuration) {
+      // Cancel consumable if player died during use
+      if (this.isDead) {
         this.isUsingConsumable = false;
-        if (this.consumableType === 'item_medkit') {
-          this.heal(50);
-          soundSystem.playHeal();
-          this.onItemUsed?.(this.consumableType);
-        } else if (this.consumableType === 'item_bandage') {
-          soundSystem.playBandageWrap();
-          this.bandageRegenActive = true;
-          this.bandageRegenTimer = 0;
-          this.onItemUsed?.(this.consumableType);
-        }
         this.consumableType = '';
+      } else {
+        this.consumableTimer += delta;
+        if (this.consumableTimer >= this.consumableDuration) {
+          this.isUsingConsumable = false;
+          if (this.consumableType === 'item_medkit') {
+            this.heal(50);
+            soundSystem.playHeal();
+            this.onItemUsed?.(this.consumableType);
+          } else if (this.consumableType === 'item_bandage') {
+            soundSystem.playBandageWrap();
+            this.bandageRegenActive = true;
+            this.bandageRegenTimer = 0;
+            this.bandageHealAccumulator = 0;
+            this.onItemUsed?.(this.consumableType);
+          }
+          this.consumableType = '';
+        }
       }
     }
 
@@ -600,9 +626,14 @@ export class Combat {
     if (this.bandageRegenActive) {
       this.bandageRegenTimer += delta;
       if (this.bandageRegenTimer < 7) {
-        this.heal(Math.round(3 * delta));
+        this.bandageHealAccumulator += 3 * delta;
+        while (this.bandageHealAccumulator >= 1.0) {
+          this.heal(1);
+          this.bandageHealAccumulator -= 1.0;
+        }
       } else {
         this.bandageRegenActive = false;
+        this.bandageHealAccumulator = 0;
       }
     }
 
