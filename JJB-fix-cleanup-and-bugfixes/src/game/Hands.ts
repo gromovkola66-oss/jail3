@@ -13,18 +13,30 @@ export class Hands {
   private isPunching = false;
   private punchProgress = 0;
   private readonly punchDuration = 0.35;
+  private punchHand: 'right' | 'left' = 'right';
 
   // Руки вытянуты вперёд, рукава уходят за нижний край экрана
   private readonly leftRest = new THREE.Vector3(-0.24, -0.2, -0.5);
   private readonly rightRest = new THREE.Vector3(0.24, -0.2, -0.5);
 
-  constructor() {
+  constructor(team?: 'guard' | 'prisoner') {
     this.group = new THREE.Group();
 
     const skin = new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.75 });
     const skinD = new THREE.MeshStandardMaterial({ color: 0xc49464, roughness: 0.8 });
-    const sleeve = new THREE.MeshStandardMaterial({ color: 0xff6b35, roughness: 0.85 });
-    const sleeveD = new THREE.MeshStandardMaterial({ color: 0xe05a2a, roughness: 0.85 });
+
+    let sleeveColor: number;
+    let cuffColor: number;
+    if (team === 'guard') {
+      sleeveColor = 0x1e3a6e;
+      cuffColor = 0x162e58;
+    } else {
+      sleeveColor = 0xff6b35;
+      cuffColor = 0xe05a2a;
+    }
+
+    const sleeve = new THREE.MeshStandardMaterial({ color: sleeveColor, roughness: 0.85 });
+    const sleeveD = new THREE.MeshStandardMaterial({ color: cuffColor, roughness: 0.85 });
 
     this.leftArm = this.buildArm(true, skin, skinD, sleeve, sleeveD);
     this.rightArm = this.buildArm(false, skin, skinD, sleeve, sleeveD);
@@ -127,27 +139,54 @@ export class Hands {
 
     if (this.isPunching) {
       this.punchProgress += delta / this.punchDuration;
-      if (this.punchProgress >= 1) { this.isPunching = false; this.punchProgress = 0; }
-      else {
+      if (this.punchProgress >= 1) {
+        this.isPunching = false;
+        this.punchProgress = 0;
+        // Toggle hand for next punch
+        this.punchHand = this.punchHand === 'right' ? 'left' : 'right';
+      } else {
         const p = this.punchProgress;
         const ease = (t: number) => 1 - (1 - t) ** 3;
 
-        if (p < 0.2) {
-          const t = ease(p / 0.2);
-          this.rightArm.position.set(this.rightRest.x + t * 0.03, this.rightRest.y + t * 0.04, this.rightRest.z + t * 0.1);
-          this.rightArm.rotation.x = t * 0.25;
-        } else if (p < 0.45) {
-          const t = ease((p - 0.2) / 0.25);
-          this.rightArm.position.set(this.rightRest.x, this.rightRest.y + 0.04 * (1 - t), this.rightRest.z + 0.1 - t * 0.3);
-          this.rightArm.rotation.x = 0.25 - t * 0.45;
+        if (this.punchHand === 'right') {
+          // Right arm punch animation
+          if (p < 0.2) {
+            const t = ease(p / 0.2);
+            this.rightArm.position.set(this.rightRest.x + t * 0.03, this.rightRest.y + t * 0.04, this.rightRest.z + t * 0.1);
+            this.rightArm.rotation.x = t * 0.25;
+          } else if (p < 0.45) {
+            const t = ease((p - 0.2) / 0.25);
+            this.rightArm.position.set(this.rightRest.x, this.rightRest.y + 0.04 * (1 - t), this.rightRest.z + 0.1 - t * 0.3);
+            this.rightArm.rotation.x = 0.25 - t * 0.45;
+          } else {
+            const t = ease((p - 0.45) / 0.55);
+            this.rightArm.position.set(this.rightRest.x, this.rightRest.y + 0.015 * (1 - t), this.rightRest.z - 0.2 + t * 0.2);
+            this.rightArm.rotation.x = -0.2 * (1 - t);
+          }
+          // Left arm slight reactive motion
+          const lr = Math.sin(p * Math.PI) * 0.015;
+          this.leftArm.position.set(this.leftRest.x, this.leftRest.y + lr, this.leftRest.z - lr);
+          this.leftArm.rotation.x = 0;
         } else {
-          const t = ease((p - 0.45) / 0.55);
-          this.rightArm.position.set(this.rightRest.x, this.rightRest.y + 0.015 * (1 - t), this.rightRest.z - 0.2 + t * 0.2);
-          this.rightArm.rotation.x = -0.2 * (1 - t);
+          // Left arm punch animation (mirrored)
+          if (p < 0.2) {
+            const t = ease(p / 0.2);
+            this.leftArm.position.set(this.leftRest.x - t * 0.03, this.leftRest.y + t * 0.04, this.leftRest.z + t * 0.1);
+            this.leftArm.rotation.x = t * 0.25;
+          } else if (p < 0.45) {
+            const t = ease((p - 0.2) / 0.25);
+            this.leftArm.position.set(this.leftRest.x, this.leftRest.y + 0.04 * (1 - t), this.leftRest.z + 0.1 - t * 0.3);
+            this.leftArm.rotation.x = 0.25 - t * 0.45;
+          } else {
+            const t = ease((p - 0.45) / 0.55);
+            this.leftArm.position.set(this.leftRest.x, this.leftRest.y + 0.015 * (1 - t), this.leftRest.z - 0.2 + t * 0.2);
+            this.leftArm.rotation.x = -0.2 * (1 - t);
+          }
+          // Right arm slight reactive motion
+          const rr = Math.sin(p * Math.PI) * 0.015;
+          this.rightArm.position.set(this.rightRest.x, this.rightRest.y + rr, this.rightRest.z - rr);
+          this.rightArm.rotation.x = 0;
         }
-        const lr = Math.sin(p * Math.PI) * 0.015;
-        this.leftArm.position.set(this.leftRest.x, this.leftRest.y + lr, this.leftRest.z - lr);
-        this.leftArm.rotation.x = 0;
         return;
       }
     }
