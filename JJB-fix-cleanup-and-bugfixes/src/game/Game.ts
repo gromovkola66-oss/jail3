@@ -239,6 +239,12 @@ export class Game {
     this.combat.dispose();
     const camera = this.controller.camera;
     const team = info.team === 'guard' ? 'guard' as const : 'prisoner' as const;
+
+    // Recreate hands with correct team colors
+    camera.remove(this.hands.group);
+    this.hands = new Hands(team);
+    camera.add(this.hands.group);
+
     this.combat = new Combat(camera, this.scene, this.hands, { team });
     this.combat.onStateChange = (state) => {
       if (this.onCombatUpdate) this.onCombatUpdate(state);
