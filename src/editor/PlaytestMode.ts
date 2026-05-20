@@ -239,18 +239,23 @@ export class PlaytestMode {
   }
 
   private addColliders(group: THREE.Object3D) {
+    group.updateMatrixWorld(true);
     group.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        // Пропускаем слишком маленькие элементы (декор)
-        const box = new THREE.Box3().setFromObject(child);
+      if (child instanceof THREE.Mesh && child.geometry) {
+        child.geometry.computeBoundingBox();
+        const geoBB = child.geometry.boundingBox;
+        if (!geoBB) return;
+        
+        const box = geoBB.clone();
+        box.applyMatrix4(child.matrixWorld);
+        
         const size = new THREE.Vector3();
         box.getSize(size);
-
-        // Коллизия только для объектов больше 0.15м хотя бы по 2 осям
-        const bigAxes = (size.x > 0.15 ? 1 : 0) + (size.y > 0.15 ? 1 : 0) + (size.z > 0.15 ? 1 : 0);
-        if (bigAxes >= 1) {
-          this.colliders.push(box);
-        }
+        
+        // Skip very tiny decorations (smaller than 5cm on all axes)
+        if (size.x < 0.05 && size.y < 0.05 && size.z < 0.05) return;
+        
+        this.colliders.push(box);
       }
     });
   }

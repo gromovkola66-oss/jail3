@@ -363,6 +363,20 @@ export class Combat {
     const horizDir = new THREE.Vector3(dropDirection.x, 0, dropDirection.z).normalize();
     dropPosition.add(horizDir.clone().multiplyScalar(0.5));
     
+    // If drop position is inside a collider, pull it back to player position
+    const dropBox = new THREE.Box3(
+      new THREE.Vector3(dropPosition.x - 0.1, dropPosition.y - 0.1, dropPosition.z - 0.1),
+      new THREE.Vector3(dropPosition.x + 0.1, dropPosition.y + 0.1, dropPosition.z + 0.1)
+    );
+    for (const collider of this.mapColliders) {
+      if (dropBox.intersectsBox(collider)) {
+        // Drop at player feet instead
+        dropPosition.copy(this.camera.position);
+        dropPosition.y -= 0.5;
+        break;
+      }
+    }
+    
     this.createDroppedWeapon(dropPosition);
     
     // Give the dropped weapon initial throw velocity
