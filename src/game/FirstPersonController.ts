@@ -142,8 +142,11 @@ export class FirstPersonController {
   private _collisionLogCount = 0;
   private checkCollision(newPosition: THREE.Vector3): boolean {
     const h = this.currentHeight;
+    // Raise the bottom of the player box by 0.25 so floor-level geometry
+    // (tiles, panels, thin slabs sitting at y~0) does not block horizontal movement.
+    const feetClearance = 0.25;
     const playerBox = new THREE.Box3(
-      new THREE.Vector3(newPosition.x - 0.3, newPosition.y - h, newPosition.z - 0.3),
+      new THREE.Vector3(newPosition.x - 0.3, newPosition.y - h + feetClearance, newPosition.z - 0.3),
       new THREE.Vector3(newPosition.x + 0.3, newPosition.y + 0.2, newPosition.z + 0.3)
     );
     for (const collider of this.colliders) {
