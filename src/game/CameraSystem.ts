@@ -172,7 +172,11 @@ export class CameraSystem {
 
   private clearHighlight() {
     for (const entry of this.highlightedMeshes) {
+      const clonedMat = entry.mesh.material as THREE.MeshStandardMaterial;
       entry.mesh.material = entry.originalMaterial;
+      if (clonedMat && clonedMat !== entry.originalMaterial) {
+        clonedMat.dispose();
+      }
     }
     this.highlightedMeshes = [];
   }
