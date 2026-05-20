@@ -35,7 +35,7 @@ export class CameraSystem {
   private _activeCameras: SecurityCamera[] = [];
   private _screenshots: string[] = [];
 
-  private highlightedMeshes: { mesh: THREE.Mesh; originalEmissive: THREE.Color; originalEmissiveIntensity: number }[] = [];
+  private highlightedMeshes: { mesh: THREE.Mesh; originalMaterial: THREE.Material }[] = [];
 
   private interactionRange = 3;
 
@@ -154,26 +154,25 @@ export class CameraSystem {
   private applyHighlight(group: THREE.Object3D) {
     group.traverse((child) => {
       if (child instanceof THREE.Mesh) {
+        if (child.userData.isTerminalScreen) return;
         const mat = child.material as THREE.MeshStandardMaterial;
         if (!mat || !mat.emissive) return;
+        const originalMaterial = child.material;
+        const cloned = mat.clone();
+        cloned.emissive.set(0x44ffaa);
+        cloned.emissiveIntensity = 0.015;
+        child.material = cloned;
         this.highlightedMeshes.push({
           mesh: child,
-          originalEmissive: mat.emissive.clone(),
-          originalEmissiveIntensity: mat.emissiveIntensity,
+          originalMaterial: originalMaterial,
         });
-        mat.emissive.set(0x44ffaa);
-        mat.emissiveIntensity = 0.02;
       }
     });
   }
 
   private clearHighlight() {
     for (const entry of this.highlightedMeshes) {
-      const mat = entry.mesh.material as THREE.MeshStandardMaterial;
-      if (mat && mat.emissive) {
-        mat.emissive.copy(entry.originalEmissive);
-        mat.emissiveIntensity = entry.originalEmissiveIntensity;
-      }
+      entry.mesh.material = entry.originalMaterial;
     }
     this.highlightedMeshes = [];
   }

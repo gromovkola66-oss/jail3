@@ -390,6 +390,7 @@ export class Game {
     const screen = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.03), screenMat);
     screen.position.set(0, 1.05, -0.1);
     screen.rotation.x = -0.15;
+    screen.userData.isTerminalScreen = true;
     terminalGroup.add(screen);
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.3, metalness: 0.85 });
     const frame = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.39, 0.02), frameMat);
