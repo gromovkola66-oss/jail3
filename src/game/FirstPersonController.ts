@@ -216,7 +216,7 @@ export class FirstPersonController {
           this.camera.position.z + 0.3 > collider.min.z &&
           this.camera.position.z - 0.3 < collider.max.z) {
         // Player's feet are at or below the top of this collider and within range, and falling
-        if (feetY <= collider.max.y && feetY > collider.max.y - 0.5 && this.velocity.y <= 0) {
+        if (feetY <= collider.max.y && feetY > collider.min.y && this.velocity.y <= 0) {
           if (collider.max.y > groundY) {
             groundY = collider.max.y;
           }

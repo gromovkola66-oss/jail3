@@ -39,8 +39,47 @@ export class PlaytestMode {
   constructor(container: HTMLElement, mapData: MapData, team: 'guard' | 'prisoner') {
     // Сцена
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x87ceeb);
-    this.scene.fog = new THREE.Fog(0x87ceeb, 20, 80);
+    this.scene.background = null;
+
+    // Sky dome
+    const skyGeo = new THREE.SphereGeometry(400, 32, 32);
+    const skyMat = new THREE.ShaderMaterial({
+      uniforms: {},
+      vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+          vec4 worldPos = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPos.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+          float h = normalize(vWorldPosition).y;
+          vec3 topColor = vec3(0.04, 0.1, 0.29);
+          vec3 midColor = vec3(0.29, 0.56, 0.85);
+          vec3 horizonColor = vec3(0.78, 0.88, 0.94);
+          vec3 warmBand = vec3(1.0, 0.83, 0.63);
+
+          vec3 color;
+          if (h > 0.3) {
+            color = mix(midColor, topColor, (h - 0.3) / 0.7);
+          } else if (h > 0.0) {
+            color = mix(horizonColor, midColor, h / 0.3);
+          } else if (h > -0.1) {
+            color = mix(warmBand, horizonColor, (h + 0.1) / 0.1);
+          } else {
+            color = warmBand;
+          }
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
+      side: THREE.BackSide,
+      depthWrite: false,
+    });
+    this.scene.add(new THREE.Mesh(skyGeo, skyMat));
+    this.scene.fog = new THREE.Fog(0xc8e0f0, 20, 80);
 
     // Рендерер
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -252,8 +291,8 @@ export class PlaytestMode {
         
         // Skip flat horizontal surfaces (floors, ceiling panels, stains, cracks)
         if (size.y < 0.1) return;
-        // Skip very thin decorative elements (seams, lines, overlays)
-        if (size.x < 0.03 || size.y < 0.03 || size.z < 0.03) return;
+        // Skip very thin decorative elements (seams, lines, overlays) - only if BOTH horizontal dims are tiny
+        if (size.x < 0.03 && size.z < 0.03) return;
         // Skip flat ground-level meshes (floor tiles/panels that are both thin and at ground level)
         if (size.y < 0.15 && box.max.y < 0.2) return;
         

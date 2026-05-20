@@ -2228,67 +2228,67 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
     create: () => {
       const g = new THREE.Group();
       // Desk body (wider)
-      g.add(pos(box(1.0, 0.7, 0.5, M.metalDark), 0, 0.35, 0));
+      g.add(pos(box(1.0, 0.85, 0.5, M.metalDark), 0, 0.425, 0));
       // Desk side panels
-      g.add(pos(box(0.03, 0.68, 0.48, M.metalMid), -0.49, 0.35, 0));
-      g.add(pos(box(0.03, 0.68, 0.48, M.metalMid), 0.49, 0.35, 0));
+      g.add(pos(box(0.03, 0.83, 0.48, M.metalMid), -0.49, 0.425, 0));
+      g.add(pos(box(0.03, 0.83, 0.48, M.metalMid), 0.49, 0.425, 0));
       // Top surface
-      g.add(pos(box(1.02, 0.03, 0.52, M.metalMid), 0, 0.71, 0));
+      g.add(pos(box(1.02, 0.03, 0.52, M.metalMid), 0, 0.87, 0));
       // Monitor screen (bigger, angled slightly back)
       const screenMat = new THREE.MeshStandardMaterial({ color: 0x1a2a4a, roughness: 0.1, metalness: 0.3, emissive: 0x0a1a3a, emissiveIntensity: 0.3 });
       const screen = box(0.7, 0.42, 0.03, screenMat);
-      screen.position.set(0, 1.1, -0.12);
+      screen.position.set(0, 1.26, -0.12);
       screen.rotation.x = -0.12;
       screen.userData.isTerminalScreen = true;
       g.add(screen);
       // Monitor bezel (frame)
       const frame = box(0.76, 0.48, 0.02, M.metalDark);
-      frame.position.set(0, 1.1, -0.14);
+      frame.position.set(0, 1.26, -0.14);
       frame.rotation.x = -0.12;
       g.add(frame);
       // Monitor bezel edges (top/bottom/left/right strips)
       const bezelTop = box(0.76, 0.025, 0.025, M.metalMid);
-      bezelTop.position.set(0, 1.34, -0.14);
+      bezelTop.position.set(0, 1.50, -0.14);
       bezelTop.rotation.x = -0.12;
       g.add(bezelTop);
       const bezelBot = box(0.76, 0.025, 0.025, M.metalMid);
-      bezelBot.position.set(0, 0.87, -0.14);
+      bezelBot.position.set(0, 1.03, -0.14);
       bezelBot.rotation.x = -0.12;
       g.add(bezelBot);
       // Monitor stand/neck
-      g.add(pos(box(0.08, 0.18, 0.08, M.metalDark), 0, 0.8, -0.12));
+      g.add(pos(box(0.08, 0.18, 0.08, M.metalDark), 0, 0.96, -0.12));
       // Monitor base plate
-      g.add(pos(box(0.2, 0.02, 0.12, M.metalDark), 0, 0.72, -0.12));
+      g.add(pos(box(0.2, 0.02, 0.12, M.metalDark), 0, 0.88, -0.12));
       // Keyboard (3 rows of key boxes)
-      g.add(pos(box(0.4, 0.015, 0.18, M.metalDark), 0, 0.73, 0.1)); // keyboard base
+      g.add(pos(box(0.4, 0.015, 0.18, M.metalDark), 0, 0.89, 0.1)); // keyboard base
       // Key row 1 (top)
       for (let i = -5; i <= 5; i++) {
-        g.add(pos(box(0.028, 0.012, 0.035, M.metalMid), i * 0.034, 0.745, 0.04));
+        g.add(pos(box(0.028, 0.012, 0.035, M.metalMid), i * 0.034, 0.905, 0.04));
       }
       // Key row 2 (middle)
       for (let i = -5; i <= 5; i++) {
-        g.add(pos(box(0.028, 0.012, 0.035, M.metalMid), i * 0.034, 0.745, 0.08));
+        g.add(pos(box(0.028, 0.012, 0.035, M.metalMid), i * 0.034, 0.905, 0.08));
       }
       // Key row 3 (bottom - spacebar area)
       for (let i = -4; i <= 4; i++) {
-        g.add(pos(box(0.028, 0.012, 0.035, M.metalMid), i * 0.034, 0.745, 0.12));
+        g.add(pos(box(0.028, 0.012, 0.035, M.metalMid), i * 0.034, 0.905, 0.12));
       }
       // Spacebar
-      g.add(pos(box(0.12, 0.012, 0.035, M.metalLight), 0, 0.745, 0.155));
+      g.add(pos(box(0.12, 0.012, 0.035, M.metalLight), 0, 0.905, 0.155));
       // Mouse (small box + cylinder button)
-      g.add(pos(box(0.04, 0.02, 0.06, M.metalMid), 0.3, 0.735, 0.1)); // mouse body
-      g.add(pos(cyl(0.008, 0.008, 0.015, M.metalLight, 8), 0.3, 0.75, 0.085)); // scroll wheel
+      g.add(pos(box(0.04, 0.02, 0.06, M.metalMid), 0.3, 0.895, 0.1)); // mouse body
+      g.add(pos(cyl(0.008, 0.008, 0.015, M.metalLight, 8), 0.3, 0.91, 0.085)); // scroll wheel
       // Cables (thin cylinders from desk back)
-      g.add(pos(cyl(0.01, 0.01, 0.4, M.metalDark, 6), -0.2, 0.5, -0.25));
-      g.add(pos(cyl(0.008, 0.008, 0.35, M.metalDark, 6), 0.1, 0.52, -0.25));
-      g.add(pos(cyl(0.012, 0.012, 0.45, M.metalDark, 6), 0.25, 0.48, -0.25));
+      g.add(pos(cyl(0.01, 0.01, 0.4, M.metalDark, 6), -0.2, 0.66, -0.25));
+      g.add(pos(cyl(0.008, 0.008, 0.35, M.metalDark, 6), 0.1, 0.68, -0.25));
+      g.add(pos(cyl(0.012, 0.012, 0.45, M.metalDark, 6), 0.25, 0.64, -0.25));
       // LED indicators (5 total)
       const ledGreen = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 0.6 });
-      g.add(pos(box(0.015, 0.015, 0.01, ledGreen), -0.3, 0.74, -0.2));
-      g.add(pos(box(0.015, 0.015, 0.01, ledGreen), -0.27, 0.74, -0.2));
-      g.add(pos(box(0.015, 0.015, 0.01, M.ledRed), -0.24, 0.74, -0.2));
-      g.add(pos(box(0.015, 0.015, 0.01, ledGreen), -0.21, 0.74, -0.2));
-      g.add(pos(box(0.015, 0.015, 0.01, M.ledRed), -0.18, 0.74, -0.2));
+      g.add(pos(box(0.015, 0.015, 0.01, ledGreen), -0.3, 0.90, -0.2));
+      g.add(pos(box(0.015, 0.015, 0.01, ledGreen), -0.27, 0.90, -0.2));
+      g.add(pos(box(0.015, 0.015, 0.01, M.ledRed), -0.24, 0.90, -0.2));
+      g.add(pos(box(0.015, 0.015, 0.01, ledGreen), -0.21, 0.90, -0.2));
+      g.add(pos(box(0.015, 0.015, 0.01, M.ledRed), -0.18, 0.90, -0.2));
       g.userData.scriptType = 'terminal';
       return g;
     }
