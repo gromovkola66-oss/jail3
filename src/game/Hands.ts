@@ -34,6 +34,10 @@ export class Hands {
   private toggleProgress = 0;
   private readonly toggleDuration = 0.2;
 
+  // Item base position tracking for melee sync
+  private itemBasePosition = new THREE.Vector3();
+  private itemBaseRotationX = 0;
+
   // Руки вытянуты вперёд, рукава уходят за нижний край экрана
   private readonly leftRest = new THREE.Vector3(-0.24, -0.2, -0.5);
   private readonly rightRest = new THREE.Vector3(0.24, -0.2, -0.5);
@@ -177,6 +181,8 @@ export class Hands {
     this.itemModel = this.createItemModel(this.heldItem);
     if (this.itemModel) {
       this.group.add(this.itemModel);
+      this.itemBasePosition.copy(this.itemModel.position);
+      this.itemBaseRotationX = this.itemModel.rotation.x;
     }
   }
 
@@ -336,6 +342,12 @@ export class Hands {
       if (this.meleeProgress >= 1) {
         this.isMeleeAttacking = false;
         this.meleeProgress = 0;
+        // Reset item model to base position
+        if (this.itemModel && (this.heldItem === 'shiv' || this.heldItem === 'baton')) {
+          this.itemModel.position.copy(this.itemBasePosition);
+          this.itemModel.rotation.x = this.itemBaseRotationX;
+          this.itemModel.rotation.z = 0;
+        }
       } else {
         const p = this.meleeProgress;
         const ease = (t: number) => 1 - (1 - t) ** 3;
@@ -373,6 +385,21 @@ export class Hands {
         // Left arm stays still during melee
         this.leftArm.position.copy(this.leftRest);
         this.leftArm.rotation.x = 0;
+
+        // Sync item model with right arm during melee
+        if (this.itemModel && (this.heldItem === 'shiv' || this.heldItem === 'baton')) {
+          const dx = this.rightArm.position.x - this.rightRest.x;
+          const dy = this.rightArm.position.y - this.rightRest.y;
+          const dz = this.rightArm.position.z - this.rightRest.z;
+          this.itemModel.position.set(
+            this.itemBasePosition.x + dx,
+            this.itemBasePosition.y + dy,
+            this.itemBasePosition.z + dz
+          );
+          this.itemModel.rotation.x = this.itemBaseRotationX + this.rightArm.rotation.x;
+          this.itemModel.rotation.z = this.rightArm.rotation.z || 0;
+        }
+
         return;
       }
     }
