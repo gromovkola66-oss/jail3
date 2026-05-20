@@ -51,7 +51,9 @@ export class Combat {
   public onWeaponDropped?: () => void;
   
   private boundMouseDown = this.onMouseDown.bind(this);
+  private boundMouseUp = this.onMouseUp.bind(this);
   private boundKeyDown = this.onKeyDown.bind(this);
+  private isMouseDown = false;
 
   constructor(
     camera: THREE.Camera,
@@ -122,6 +124,7 @@ export class Combat {
 
   private setupInput() {
     document.addEventListener('mousedown', this.boundMouseDown);
+    document.addEventListener('mouseup', this.boundMouseUp);
     document.addEventListener('keydown', this.boundKeyDown);
   }
 
@@ -129,11 +132,18 @@ export class Combat {
     if (document.pointerLockElement === null) return;
     
     if (event.button === 0) { // ЛКМ
+      this.isMouseDown = true;
       if (this.weapon) {
         this.shoot();
       } else {
         this.punch();
       }
+    }
+  }
+
+  private onMouseUp(event: MouseEvent) {
+    if (event.button === 0) {
+      this.isMouseDown = false;
     }
   }
 
@@ -416,6 +426,11 @@ export class Combat {
     if (this.punchCooldown > 0) {
       this.punchCooldown -= delta;
     }
+
+    // Automatic fire while holding mouse button
+    if (this.isMouseDown && this.weapon && document.pointerLockElement !== null) {
+      this.shoot();
+    }
     
     // Обновляем оружие
     if (this.weapon) {
@@ -438,6 +453,7 @@ export class Combat {
 
   dispose() {
     document.removeEventListener('mousedown', this.boundMouseDown);
+    document.removeEventListener('mouseup', this.boundMouseUp);
     document.removeEventListener('keydown', this.boundKeyDown);
   }
 }

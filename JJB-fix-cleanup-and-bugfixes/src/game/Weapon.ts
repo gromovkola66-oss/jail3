@@ -32,7 +32,7 @@ export class Weapon {
 
   constructor(team: WeaponTeam = 'guard') {
     this.group = new THREE.Group();
-    this.stats = { name: 'AK-47', damage: 25, fireRate: 10, maxAmmo: 30, currentAmmo: 30, range: 100, spread: 0.02 };
+    this.stats = { name: 'AK-47', damage: 25, fireRate: 13, maxAmmo: 30, currentAmmo: 30, range: 100, spread: 0.02 };
 
     this.magazine = new THREE.Mesh();
     this.leftHand = new THREE.Group();
