@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Implement weapon drop physics (gravity + floor landing) and add collision to editor objects so items placed in the editor cannot pass through walls",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "WEAPON DROP PHYSICS: In src/game/Combat.ts, modify the dropped weapons behavior. Currently in the update() method, dropped weapons rotate and bob up/down in a floating animation (line: dropped.position.y = 0.5 + Math.sin(performance.now() * 0.002) * 0.05). Replace this with actual physics: each dropped weapon should have a velocity stored in userData (userData.velocityY). On creation (createDroppedWeapon), set initial position.y to the drop height (currently 0.5, which is already low - for player drops use camera height minus some offset) and set userData.velocityY = 0. In update(), apply gravity to velocityY and update position.y. Clamp to floor at y=0.1 (weapon resting on ground). Once on the floor, stop applying gravity. Remove the floating/bobbing animation.",
     "WEAPON DROP PHYSICS - MAP COLLISION: When a weapon is dropped, it should collide with map geometry (walls/floor) but NOT with the player. The game already has colliders in this.prisonMap.colliders (array of THREE.Box3). Pass these colliders to the Combat system. In Combat.update(), for each dropped weapon that is still falling, check if its bounding box intersects any map collider. If it does, stop movement in that direction. For simplicity: just do a vertical fall + horizontal velocity (throw direction), and stop vertical when hitting floor or a surface below.",
@@ -23,5 +23,5 @@
     "Run npx vite build and verify build succeeds"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All changes compiled cleanly. Editor object collision was already implemented in PlaytestMode.ts via addColliders(). The weapon drop physics replaces the floating/bobbing animation with gravity, floor landing at y=0.1, horizontal throw velocity from camera direction, map wall collision using Box3 intersection tests, and friction. Players can still walk through dropped weapons since the weapons are not added to the player's collider list."
 }
