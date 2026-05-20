@@ -317,20 +317,6 @@ export const GameUI = ({ fps, position, isLocked, combatState, team, teamName, d
       {/* Inventory Wheel */}
       {inventoryState?.isOpen && (
         <div className="fixed inset-0 bg-black/60 pointer-events-auto">
-          <style>{`
-            @keyframes slotAppear {
-              from { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-              to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            }
-            @keyframes pulseGlow {
-              0%, 100% { box-shadow: 0 0 15px rgba(250,204,21,0.3); }
-              50% { box-shadow: 0 0 25px rgba(250,204,21,0.6); }
-            }
-            @keyframes ringRotate {
-              from { transform: translate(-50%, -50%) rotate(0deg); }
-              to { transform: translate(-50%, -50%) rotate(360deg); }
-            }
-          `}</style>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
             <div className="w-[420px] h-[420px] rounded-full border-2 border-white/20 relative bg-gradient-radial from-gray-900/80 to-transparent">
               {/* Rotating dashed ring decoration */}
@@ -343,7 +329,7 @@ export const GameUI = ({ fps, position, isLocked, combatState, team, teamName, d
                 return (
                   <div
                     key={index}
-                    className={`absolute w-20 h-20 rounded-full flex flex-col items-center justify-center cursor-pointer transition-all ${
+                    className={`absolute w-20 h-20 -translate-x-1/2 -translate-y-1/2 rounded-full flex flex-col items-center justify-center cursor-pointer transition-all ${
                       isHighlighted
                         ? 'border-2 border-yellow-400 bg-gradient-to-b from-gray-700/90 to-gray-900/90 scale-110 shadow-[0_0_20px_rgba(250,204,21,0.4)]'
                         : 'border-2 border-gray-600/50 bg-gradient-to-b from-gray-700/90 to-gray-900/90 hover:border-gray-400'
