@@ -29,6 +29,7 @@ export class Combat {
   public weapon: Weapon | null = null;
   public hands: Hands;
   public droppedWeapons: THREE.Group[] = [];
+  public droppedItems: THREE.Group[] = [];
   
   private hp = 100;
   private maxHp = 100;
@@ -64,6 +65,7 @@ export class Combat {
   public onWeaponPickedUp?: (weaponName: string) => void;
   public onWeaponDropped?: () => void;
   public onItemUsed?: (itemId: string) => void;
+  public onItemDropped?: (itemId: string) => void;
   
   private boundMouseDown = this.onMouseDown.bind(this);
   private boundMouseUp = this.onMouseUp.bind(this);
@@ -186,7 +188,11 @@ export class Combat {
         this.tryPickupWeapon();
         break;
       case 'KeyG':
-        this.dropWeapon();
+        if (this.weapon || this.storedWeapon) {
+          this.dropWeapon();
+        } else {
+          this.dropItem();
+        }
         break;
       case 'KeyR':
         if (this.weapon && !this.weapon.isCurrentlyReloading() && this.weapon.stats.currentAmmo < this.weapon.stats.maxAmmo) {
@@ -424,6 +430,222 @@ export class Combat {
     this.onWeaponDropped?.();
   }
 
+  private dropItem() {
+    if (this.isDead || this.heldItemType === 'none' || this.heldItemType === 'fists') return;
+    if (this.isUsingConsumable) return;
+
+    const itemType = this.heldItemType;
+
+    // Calculate drop position (same logic as dropWeapon)
+    const dropDirection = new THREE.Vector3();
+    this.camera.getWorldDirection(dropDirection);
+    const dropPosition = this.camera.position.clone();
+    dropPosition.y = this.camera.position.y - 0.5;
+    const horizDir = new THREE.Vector3(dropDirection.x, 0, dropDirection.z).normalize();
+    dropPosition.add(horizDir.clone().multiplyScalar(0.5));
+
+    // Check colliders
+    const dropBox = new THREE.Box3(
+      new THREE.Vector3(dropPosition.x - 0.1, dropPosition.y - 0.1, dropPosition.z - 0.1),
+      new THREE.Vector3(dropPosition.x + 0.1, dropPosition.y + 0.1, dropPosition.z + 0.1)
+    );
+    for (const collider of this.mapColliders) {
+      if (dropBox.intersectsBox(collider)) {
+        dropPosition.copy(this.camera.position);
+        dropPosition.y -= 0.5;
+        break;
+      }
+    }
+
+    this.createDroppedItemMesh(dropPosition, itemType);
+
+    // Give throw velocity
+    const lastDropped = this.droppedItems[this.droppedItems.length - 1];
+    lastDropped.userData.velocityY = 2;
+    lastDropped.userData.velocityX = dropDirection.x * 3;
+    lastDropped.userData.velocityZ = dropDirection.z * 3;
+    lastDropped.userData.grounded = false;
+
+    // Clear equipped item
+    this.unequipItem();
+
+    // Play drop sound
+    soundSystem.playDrop();
+
+    // Notify inventory
+    this.onItemDropped?.(itemType);
+  }
+
+  private createDroppedItemMesh(position: THREE.Vector3, itemType: string) {
+    const itemGroup = new THREE.Group();
+
+    switch (itemType) {
+      case 'item_shiv': {
+        const bladeMat = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.15, metalness: 0.9 });
+        const tapeMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.015, 0.14), bladeMat);
+        itemGroup.add(blade);
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.08), tapeMat);
+        handle.position.set(0, 0, 0.11);
+        itemGroup.add(handle);
+        break;
+      }
+      case 'item_baton': {
+        const rubber = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.95 });
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.013, 0.4, 8), rubber);
+        body.rotation.x = Math.PI / 2;
+        itemGroup.add(body);
+        break;
+      }
+      case 'item_shield': {
+        const frameMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.3, metalness: 0.85 });
+        const glassMat = new THREE.MeshStandardMaterial({ color: 0xaaddff, roughness: 0.1, transparent: true, opacity: 0.35 });
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 0.02), frameMat);
+        itemGroup.add(frame);
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.4, 0.01), glassMat);
+        panel.position.set(0, 0.05, 0.01);
+        itemGroup.add(panel);
+        break;
+      }
+      case 'item_flashlight': {
+        const metalDark = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.3, metalness: 0.85 });
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.16, 8), metalDark);
+        body.rotation.x = Math.PI / 2;
+        itemGroup.add(body);
+        break;
+      }
+      case 'item_medkit': {
+        const boxMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.6 });
+        const crossMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.5 });
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.12), boxMat);
+        itemGroup.add(box);
+        const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.005, 0.025), crossMat);
+        crossH.position.set(0, 0.051, 0);
+        itemGroup.add(crossH);
+        const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.005, 0.06), crossMat);
+        crossV.position.set(0, 0.051, 0);
+        itemGroup.add(crossV);
+        break;
+      }
+      case 'item_bandage': {
+        const bandageMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.85 });
+        const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.05, 12), bandageMat);
+        roll.rotation.z = Math.PI / 2;
+        itemGroup.add(roll);
+        break;
+      }
+    }
+
+    itemGroup.position.copy(position);
+    itemGroup.rotation.y = Math.random() * Math.PI;
+
+    itemGroup.userData.isItem = true;
+    itemGroup.userData.itemType = itemType;
+    itemGroup.userData.velocityY = 0;
+    itemGroup.userData.velocityX = 0;
+    itemGroup.userData.velocityZ = 0;
+    itemGroup.userData.grounded = false;
+
+    this.scene.add(itemGroup);
+    this.droppedItems.push(itemGroup);
+  }
+
+  public tryPickupItem(camera: THREE.Camera): { picked: boolean; itemType: string } | null {
+    const playerPos = camera.position;
+    const pickupRange = 2;
+
+    for (let i = 0; i < this.droppedItems.length; i++) {
+      const item = this.droppedItems[i];
+      const dx = playerPos.x - item.position.x;
+      const dz = playerPos.z - item.position.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+
+      if (distance < pickupRange) {
+        this.scene.remove(item);
+        this.droppedItems.splice(i, 1);
+        soundSystem.playPickup();
+        return { picked: true, itemType: item.userData.itemType };
+      }
+    }
+    return null;
+  }
+
+  private updateDroppedObjectPhysics(obj: THREE.Group, delta: number) {
+    if (obj.userData.grounded) {
+      obj.rotation.y += delta * 0.3;
+      return;
+    }
+
+    // Apply gravity
+    obj.userData.velocityY -= 15 * delta;
+
+    // Compute new positions
+    const newY = obj.position.y + obj.userData.velocityY * delta;
+    const newX = obj.position.x + obj.userData.velocityX * delta;
+    const newZ = obj.position.z + obj.userData.velocityZ * delta;
+
+    // Check Y collision against map objects
+    if (obj.userData.velocityY < 0) {
+      const testBoxY = new THREE.Box3().setFromObject(obj);
+      const deltaY = obj.userData.velocityY * delta;
+      testBoxY.translate(new THREE.Vector3(0, deltaY, 0));
+      let landedOnObject = false;
+      for (const collider of this.mapColliders) {
+        if (testBoxY.intersectsBox(collider) && collider.max.y <= obj.position.y) {
+          obj.position.y = collider.max.y + 0.1;
+          obj.userData.velocityY = 0;
+          obj.userData.velocityX = 0;
+          obj.userData.velocityZ = 0;
+          obj.userData.grounded = true;
+          landedOnObject = true;
+          break;
+        }
+      }
+      if (landedOnObject) return;
+    }
+
+    // Floor collision
+    if (newY <= 0.1) {
+      obj.position.y = 0.1;
+      obj.userData.velocityY = 0;
+      obj.userData.velocityX = 0;
+      obj.userData.velocityZ = 0;
+      obj.userData.grounded = true;
+    } else {
+      obj.position.y = newY;
+    }
+
+    // Horizontal movement with map collision check
+    if (!obj.userData.grounded) {
+      // Check X collision
+      const testBoxX = new THREE.Box3().setFromObject(obj);
+      testBoxX.translate(new THREE.Vector3(obj.userData.velocityX * delta, 0, 0));
+      let hitX = false;
+      for (const collider of this.mapColliders) {
+        if (testBoxX.intersectsBox(collider)) { hitX = true; break; }
+      }
+      if (!hitX) obj.position.x = newX;
+      else obj.userData.velocityX = 0;
+
+      // Check Z collision
+      const testBoxZ = new THREE.Box3().setFromObject(obj);
+      testBoxZ.translate(new THREE.Vector3(0, 0, obj.userData.velocityZ * delta));
+      let hitZ = false;
+      for (const collider of this.mapColliders) {
+        if (testBoxZ.intersectsBox(collider)) { hitZ = true; break; }
+      }
+      if (!hitZ) obj.position.z = newZ;
+      else obj.userData.velocityZ = 0;
+    }
+
+    // Apply friction to horizontal velocity
+    obj.userData.velocityX *= (1 - 3 * delta);
+    obj.userData.velocityZ *= (1 - 3 * delta);
+
+    // Slow rotation while in air
+    obj.rotation.y += delta * 2;
+  }
+
   private meleeAttack(type: 'shiv' | 'baton') {
     if (this.isPunching || this.punchCooldown > 0 || this.isDead || this.isUsingConsumable) return;
 
@@ -655,80 +877,12 @@ export class Combat {
     
     // Вращение выброшенного оружия (для визуала)
     for (const dropped of this.droppedWeapons) {
-      if (dropped.userData.grounded) {
-        dropped.rotation.y += delta * 0.3;
-        continue;
-      }
+      this.updateDroppedObjectPhysics(dropped, delta);
+    }
 
-      // Apply gravity
-      dropped.userData.velocityY -= 15 * delta;
-
-      // Compute new positions
-      const newY = dropped.position.y + dropped.userData.velocityY * delta;
-      const newX = dropped.position.x + dropped.userData.velocityX * delta;
-      const newZ = dropped.position.z + dropped.userData.velocityZ * delta;
-
-      // Check Y collision against map objects
-      if (dropped.userData.velocityY < 0) {
-        const testBoxY = new THREE.Box3().setFromObject(dropped);
-        const deltaY = dropped.userData.velocityY * delta;
-        testBoxY.translate(new THREE.Vector3(0, deltaY, 0));
-        let landedOnObject = false;
-        for (const collider of this.mapColliders) {
-          if (testBoxY.intersectsBox(collider) && collider.max.y <= dropped.position.y) {
-            // Land on top of this collider
-            dropped.position.y = collider.max.y + 0.1;
-            dropped.userData.velocityY = 0;
-            dropped.userData.velocityX = 0;
-            dropped.userData.velocityZ = 0;
-            dropped.userData.grounded = true;
-            landedOnObject = true;
-            break;
-          }
-        }
-        if (landedOnObject) continue;
-      }
-
-      // Floor collision
-      if (newY <= 0.1) {
-        dropped.position.y = 0.1;
-        dropped.userData.velocityY = 0;
-        dropped.userData.velocityX = 0;
-        dropped.userData.velocityZ = 0;
-        dropped.userData.grounded = true;
-      } else {
-        dropped.position.y = newY;
-      }
-
-      // Horizontal movement with map collision check
-      if (!dropped.userData.grounded) {
-        // Check X collision
-        const testBoxX = new THREE.Box3().setFromObject(dropped);
-        testBoxX.translate(new THREE.Vector3(dropped.userData.velocityX * delta, 0, 0));
-        let hitX = false;
-        for (const collider of this.mapColliders) {
-          if (testBoxX.intersectsBox(collider)) { hitX = true; break; }
-        }
-        if (!hitX) dropped.position.x = newX;
-        else dropped.userData.velocityX = 0;
-
-        // Check Z collision
-        const testBoxZ = new THREE.Box3().setFromObject(dropped);
-        testBoxZ.translate(new THREE.Vector3(0, 0, dropped.userData.velocityZ * delta));
-        let hitZ = false;
-        for (const collider of this.mapColliders) {
-          if (testBoxZ.intersectsBox(collider)) { hitZ = true; break; }
-        }
-        if (!hitZ) dropped.position.z = newZ;
-        else dropped.userData.velocityZ = 0;
-      }
-
-      // Apply friction to horizontal velocity
-      dropped.userData.velocityX *= (1 - 3 * delta);
-      dropped.userData.velocityZ *= (1 - 3 * delta);
-
-      // Slow rotation while in air
-      dropped.rotation.y += delta * 2;
+    // Update dropped items physics
+    for (const item of this.droppedItems) {
+      this.updateDroppedObjectPhysics(item, delta);
     }
   }
 
