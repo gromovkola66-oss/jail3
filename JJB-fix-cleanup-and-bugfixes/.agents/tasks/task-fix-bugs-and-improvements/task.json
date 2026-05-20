@@ -1,0 +1,7 @@
+{
+  "task_id": "task-fix-bugs-and-improvements",
+  "task_description": "Fix multiple bugs and add improvements to the 3D jail game: guard fist colors, alternating punch animations, inventory close on select, terminal unhighlight, automatic weapon hold-to-fire, weapon drop physics with gravity, and editor object collision",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}
