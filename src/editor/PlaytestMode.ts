@@ -272,6 +272,19 @@ export class PlaytestMode {
     // Спавн
     if (spawnPoint) {
       this.controller.camera.position.copy(spawnPoint);
+      // Adjust spawn height based on floor colliders below spawn point
+      let bestFloorY = 0;
+      for (const collider of this.colliders) {
+        if (spawnPoint.x + 0.3 > collider.min.x &&
+            spawnPoint.x - 0.3 < collider.max.x &&
+            spawnPoint.z + 0.3 > collider.min.z &&
+            spawnPoint.z - 0.3 < collider.max.z &&
+            collider.max.y <= spawnPoint.y &&
+            collider.max.y > bestFloorY) {
+          bestFloorY = collider.max.y;
+        }
+      }
+      this.controller.camera.position.y = bestFloorY + 1.7;
     } else {
       this.controller.camera.position.set(0, 1.7, 0);
     }

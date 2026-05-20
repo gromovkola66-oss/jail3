@@ -239,6 +239,13 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       // Замок
       g.add(pos(box(0.1, 0.15, 0.06, M.metalMid), 0.5, 1.2, 0.03));
       g.add(pos(cyl(0.025, 0.025, 0.04, M.chrome), 0.5, 1.2, 0.06));
+      // Invisible collision box to prevent jumping over
+      const collisionBox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 3.8, 0.12),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      collisionBox.position.set(0, 1.9, 0);
+      g.add(collisionBox);
       return g;
     }
   },

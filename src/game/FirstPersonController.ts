@@ -35,6 +35,7 @@ export class FirstPersonController {
   public cameraShakeAmount = 0;
   public recoilPitch = 0;
 
+  private prevFeetY = 0;
   private colliders: THREE.Box3[] = [];
   private pointerLockEnabled = true;
 
@@ -171,6 +172,9 @@ export class FirstPersonController {
   update(delta: number) {
     if (!this.isLocked) return;
 
+    // Track previous frame feet position for fall-through detection
+    this.prevFeetY = this.camera.position.y - this.currentHeight;
+
     // Height transition (crouch)
     const targetHeight = this.isCrouching ? this.crouchHeight : this.standHeight;
     this.currentHeight += (targetHeight - this.currentHeight) * delta * 10;
@@ -216,7 +220,7 @@ export class FirstPersonController {
           this.camera.position.z + 0.3 > collider.min.z &&
           this.camera.position.z - 0.3 < collider.max.z) {
         // Player's feet are at or below the top of this collider and within range, and falling
-        if (feetY <= collider.max.y && feetY > collider.min.y && this.velocity.y <= 0) {
+        if (feetY <= collider.max.y && (feetY > collider.min.y || this.prevFeetY >= collider.max.y) && this.velocity.y <= 0) {
           if (collider.max.y > groundY) {
             groundY = collider.max.y;
           }
