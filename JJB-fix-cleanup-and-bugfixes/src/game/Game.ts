@@ -120,6 +120,7 @@ export class Game {
 
     // Боевая система
     this.combat = new Combat(camera, this.scene, this.hands);
+    this.combat.setMapColliders(this.prisonMap.colliders);
     this.combat.onStateChange = (state) => {
       if (this.onCombatUpdate) {
         this.onCombatUpdate(state);
@@ -246,6 +247,7 @@ export class Game {
     camera.add(this.hands.group);
 
     this.combat = new Combat(camera, this.scene, this.hands, { team });
+    this.combat.setMapColliders(this.prisonMap.colliders);
     this.combat.onStateChange = (state) => {
       if (this.onCombatUpdate) this.onCombatUpdate(state);
     };

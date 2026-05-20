@@ -126,6 +126,7 @@ export class PlaytestMode {
 
     // Коллизии
     this.controller.setColliders(this.colliders);
+    this.combat.setMapColliders(this.colliders);
 
     // E key for terminal interaction
     document.addEventListener('keydown', this.onKeyDown);

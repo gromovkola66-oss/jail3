@@ -24,6 +24,7 @@ export class Combat {
   private camera: THREE.Camera;
   private scene: THREE.Scene;
   private team: CombatTeam;
+  private mapColliders: THREE.Box3[] = [];
   
   public weapon: Weapon | null = null;
   public hands: Hands;
@@ -74,6 +75,10 @@ export class Combat {
       this.createDroppedWeapon(new THREE.Vector3(9, 1, 2));
       this.createDroppedWeapon(new THREE.Vector3(9, 1, 4));
     }
+  }
+
+  setMapColliders(colliders: THREE.Box3[]) {
+    this.mapColliders = colliders;
   }
 
   // Выдать оружие игроку (для охраны при спавне)
@@ -293,6 +298,10 @@ export class Combat {
     // Метаданные для идентификации
     weaponGroup.userData.isWeapon = true;
     weaponGroup.userData.weaponType = 'AK-47';
+    weaponGroup.userData.velocityY = 0;
+    weaponGroup.userData.velocityX = 0;
+    weaponGroup.userData.velocityZ = 0;
+    weaponGroup.userData.grounded = false;
     
     this.scene.add(weaponGroup);
     this.droppedWeapons.push(weaponGroup);
@@ -346,14 +355,20 @@ export class Combat {
     // Создаём выброшенное оружие перед игроком
     const dropDirection = new THREE.Vector3();
     this.camera.getWorldDirection(dropDirection);
-    dropDirection.y = 0;
-    dropDirection.normalize();
     
-    const dropPosition = this.camera.position.clone()
-      .add(dropDirection.multiplyScalar(1.5));
-    dropPosition.y = 0.5;
+    const dropPosition = this.camera.position.clone();
+    dropPosition.y = this.camera.position.y - 0.5;
+    const horizDir = new THREE.Vector3(dropDirection.x, 0, dropDirection.z).normalize();
+    dropPosition.add(horizDir.clone().multiplyScalar(0.5));
     
     this.createDroppedWeapon(dropPosition);
+    
+    // Give the dropped weapon initial throw velocity
+    const lastDropped = this.droppedWeapons[this.droppedWeapons.length - 1];
+    lastDropped.userData.velocityY = 2;
+    lastDropped.userData.velocityX = dropDirection.x * 3;
+    lastDropped.userData.velocityZ = dropDirection.z * 3;
+    lastDropped.userData.grounded = false;
     
     this.weapon = null;
     
@@ -445,9 +460,59 @@ export class Combat {
     
     // Вращение выброшенного оружия (для визуала)
     for (const dropped of this.droppedWeapons) {
-      dropped.rotation.y += delta * 0.5;
-      // Небольшое покачивание
-      dropped.position.y = 0.5 + Math.sin(performance.now() * 0.002) * 0.05;
+      if (dropped.userData.grounded) {
+        dropped.rotation.y += delta * 0.3;
+        continue;
+      }
+
+      // Apply gravity
+      dropped.userData.velocityY -= 15 * delta;
+
+      // Compute new positions
+      const newY = dropped.position.y + dropped.userData.velocityY * delta;
+      const newX = dropped.position.x + dropped.userData.velocityX * delta;
+      const newZ = dropped.position.z + dropped.userData.velocityZ * delta;
+
+      // Floor collision
+      if (newY <= 0.1) {
+        dropped.position.y = 0.1;
+        dropped.userData.velocityY = 0;
+        dropped.userData.velocityX = 0;
+        dropped.userData.velocityZ = 0;
+        dropped.userData.grounded = true;
+      } else {
+        dropped.position.y = newY;
+      }
+
+      // Horizontal movement with map collision check
+      if (!dropped.userData.grounded) {
+        // Check X collision
+        const testBoxX = new THREE.Box3().setFromObject(dropped);
+        testBoxX.translate(new THREE.Vector3(dropped.userData.velocityX * delta, 0, 0));
+        let hitX = false;
+        for (const collider of this.mapColliders) {
+          if (testBoxX.intersectsBox(collider)) { hitX = true; break; }
+        }
+        if (!hitX) dropped.position.x = newX;
+        else dropped.userData.velocityX = 0;
+
+        // Check Z collision
+        const testBoxZ = new THREE.Box3().setFromObject(dropped);
+        testBoxZ.translate(new THREE.Vector3(0, 0, dropped.userData.velocityZ * delta));
+        let hitZ = false;
+        for (const collider of this.mapColliders) {
+          if (testBoxZ.intersectsBox(collider)) { hitZ = true; break; }
+        }
+        if (!hitZ) dropped.position.z = newZ;
+        else dropped.userData.velocityZ = 0;
+      }
+
+      // Apply friction to horizontal velocity
+      dropped.userData.velocityX *= (1 - 3 * delta);
+      dropped.userData.velocityZ *= (1 - 3 * delta);
+
+      // Slow rotation while in air
+      dropped.rotation.y += delta * 2;
     }
   }
 
