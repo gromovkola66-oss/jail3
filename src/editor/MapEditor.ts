@@ -84,10 +84,11 @@ export class MapEditor {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x1a1a2e);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(this.renderer.domElement);
 
     this.editorCamera = new EditorCamera();
@@ -96,10 +97,21 @@ export class MapEditor {
     const sun = new THREE.DirectionalLight(0xffffff, 0.8);
     sun.position.set(20, 30, 10);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    // Editor scene can be large during placement — properly bound the shadow frustum
+    // to keep the shadow pass cheap (default ±5 leaves most of the scene unshadowed
+    // and wastes work). 1024² is plenty for an editor view.
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.left = -50;
+    sun.shadow.camera.right = 50;
+    sun.shadow.camera.top = 50;
+    sun.shadow.camera.bottom = -50;
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 200;
+    sun.shadow.bias = -0.0012;
     this.scene.add(sun);
 
-    this.gridHelper = new THREE.GridHelper(800, 800, 0x444444, 0x2a2a2a);
+    // 200×200 covers any realistic prison map and keeps line geometry small
+    this.gridHelper = new THREE.GridHelper(200, 200, 0x444444, 0x2a2a2a);
     this.gridHelper.visible = this.gridEnabled;
     this.scene.add(this.gridHelper);
     this.scene.add(new THREE.AxesHelper(8));
@@ -828,11 +840,12 @@ export class MapEditor {
     this.editorCamera.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
+  private boundAnimate = this.animate.bind(this);
   start() { this.isRunning = true; this.prevTime = performance.now(); this.animate(); }
   stop() { this.isRunning = false; }
   private animate() {
     if (!this.isRunning) return;
-    requestAnimationFrame(this.animate.bind(this));
+    requestAnimationFrame(this.boundAnimate);
     const t = performance.now();
     const d = Math.min((t - this.prevTime) / 1000, 0.1);
     this.prevTime = t;

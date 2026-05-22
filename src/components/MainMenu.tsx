@@ -18,7 +18,7 @@ const MenuScene = () => {
     scene.background = new THREE.Color(0x080810);
     scene.fog = new THREE.FogExp2(0x080810, 0.035);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
