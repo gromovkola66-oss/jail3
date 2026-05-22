@@ -332,8 +332,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
           {/* Stats */}
           <div className="absolute top-4 left-4 bg-black/60 text-white p-3 rounded-lg font-mono text-sm">
-            <div className="text-green-400">FPS: {ptFps}</div>
+            <div className={ptFps < 30 ? 'text-red-400' : ptFps < 50 ? 'text-yellow-400' : 'text-green-400'}>FPS: {ptFps}</div>
             {ptPos && <div className="text-gray-300 mt-1">X: {ptPos.x.toFixed(1)} Y: {ptPos.y.toFixed(1)} Z: {ptPos.z.toFixed(1)}</div>}
+            {ptFps > 0 && ptFps < 30 && (
+              <div className="mt-2 pt-2 border-t border-gray-700 text-yellow-300 text-xs leading-snug max-w-[220px]">
+                Низкий FPS. Попробуйте снизить качество в настройках главного меню.
+              </div>
+            )}
           </div>
 
           {/* Badge */}

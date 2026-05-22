@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import {
+  applyToRenderer,
+  getQuality,
+  getRendererOptions,
+  setQuality,
+  type Quality,
+} from '../game/QualitySettings';
 
 interface MainMenuProps {
   onStartGame: () => void;
@@ -18,11 +25,9 @@ const MenuScene = () => {
     scene.background = new THREE.Color(0x080810);
     scene.fog = new THREE.FogExp2(0x080810, 0.035);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer(getRendererOptions());
     renderer.setSize(W, H);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    applyToRenderer(renderer);
     containerRef.current.appendChild(renderer.domElement);
 
     const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100);
@@ -499,7 +504,12 @@ const MenuScene = () => {
 // === SETTINGS ===
 const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
   const [volume, setVolume] = useState(50);
-  const [quality, setQuality] = useState<'low' | 'medium' | 'high'>('medium');
+  const [quality, setQualityState] = useState<Quality>(() => getQuality());
+
+  const changeQuality = (q: Quality) => {
+    setQualityState(q);
+    setQuality(q);
+  };
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={onClose}>
@@ -528,17 +538,31 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
         {/* Graphics */}
         <div className="mb-8">
           <h3 className="text-lg font-bold text-green-400 mb-4">Графика</h3>
-          <div className="bg-black/30 rounded-xl p-4">
-            <span className="text-gray-300 text-sm block mb-3">Качество</span>
+          <div className="bg-black/30 rounded-xl p-4 space-y-3">
+            <span className="text-gray-300 text-sm block">Качество</span>
             <div className="grid grid-cols-3 gap-2">
               {(['low', 'medium', 'high'] as const).map(q => (
-                <button key={q} onClick={() => setQuality(q)}
+                <button key={q} onClick={() => changeQuality(q)}
                   className={`py-2.5 rounded-lg text-sm font-medium transition-all ${quality === q
                     ? 'bg-green-600 text-white shadow-lg shadow-green-900/50 scale-105'
                     : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
                   {q === 'low' ? 'Низкое' : q === 'medium' ? 'Среднее' : 'Высокое'}
                 </button>
               ))}
+            </div>
+            <div className="text-xs text-gray-500 leading-relaxed">
+              {quality === 'low' && (
+                <>Для слабых ноутбуков: тени отключены, без сглаживания, без ретины.
+                <span className="text-yellow-400"> Применится при следующем запуске игры/редактора.</span></>
+              )}
+              {quality === 'medium' && (
+                <>Сбалансированный режим: тени 1024², умеренная плотность пикселей.
+                <span className="text-yellow-400"> Применится при следующем запуске игры/редактора.</span></>
+              )}
+              {quality === 'high' && (
+                <>Максимум: тени 2048², ретина-плотность.
+                <span className="text-yellow-400"> Применится при следующем запуске игры/редактора.</span></>
+              )}
             </div>
           </div>
         </div>

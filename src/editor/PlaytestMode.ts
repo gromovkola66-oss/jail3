@@ -9,6 +9,13 @@ import { MapData } from './MapEditor';
 import { getObjectById } from './EditorObjects';
 import { soundSystem } from '../game/SoundSystem';
 import { ITEM_DEFS } from '../game/ItemDefs';
+import {
+  applyToRenderer,
+  configureSunShadow,
+  getRendererOptions,
+  isFogEnabled,
+  pruneShadowCasters,
+} from '../game/QualitySettings';
 
 export class PlaytestMode {
   private scene: THREE.Scene;
@@ -88,14 +95,14 @@ export class PlaytestMode {
       depthWrite: false,
     });
     this.scene.add(new THREE.Mesh(skyGeo, skyMat));
-    this.scene.fog = new THREE.Fog(0xc8e0f0, 20, 200);
+    if (isFogEnabled()) {
+      this.scene.fog = new THREE.Fog(0xc8e0f0, 20, 200);
+    }
 
     // Рендерер
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer(getRendererOptions());
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    applyToRenderer(this.renderer);
     container.appendChild(this.renderer.domElement);
 
     // Камера
@@ -192,13 +199,7 @@ export class PlaytestMode {
     this.scene.add(new THREE.AmbientLight(0x808080, 1.5));
     const sun = new THREE.DirectionalLight(0xffffff, 0.55);
     sun.position.set(20, 30, 10);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.camera.left = -42;
-    sun.shadow.camera.right = 42;
-    sun.shadow.camera.top = 42;
-    sun.shadow.camera.bottom = -42;
-    sun.shadow.bias = -0.0012;
+    configureSunShadow(sun, 42);
     this.scene.add(sun);
     this.scene.add(new THREE.DirectionalLight(0xffffee, 0.3).translateX(-20).translateY(10));
 
@@ -424,6 +425,11 @@ export class PlaytestMode {
       this.controller.camera.position.set(0, 1.7, 0);
       this.controller.initFeetPosition();
     }
+
+    // Strip castShadow from tiny decorative meshes (grout lines, dials,
+    // seams). On a typical prison map this can drop the shadow caster
+    // count from thousands to hundreds, slashing the shadow-pass cost.
+    pruneShadowCasters(this.scene);
   }
 
   private addColliders(group: THREE.Object3D) {

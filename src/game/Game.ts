@@ -10,6 +10,13 @@ import { CameraSystem, CameraSystemState } from './CameraSystem';
 import { InventorySystem, InventoryState } from './InventorySystem';
 import { ITEM_DEFS } from './ItemDefs';
 import { soundSystem } from './SoundSystem';
+import {
+  applyToRenderer,
+  getConfig,
+  getRendererOptions,
+  isFogEnabled,
+  pruneShadowCasters,
+} from './QualitySettings';
 
 export interface DoorInteractionState {
   canInteract: boolean;
@@ -101,14 +108,14 @@ export class Game {
       depthWrite: false,
     });
     this.scene.add(new THREE.Mesh(skyGeo, skyMat));
-    this.scene.fog = new THREE.Fog(0xc8e0f0, 20, 80);
+    if (isFogEnabled()) {
+      this.scene.fog = new THREE.Fog(0xc8e0f0, 20, 80);
+    }
 
     // Рендерер
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer(getRendererOptions());
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    applyToRenderer(this.renderer);
     container.appendChild(this.renderer.domElement);
 
     // Камера
@@ -123,9 +130,17 @@ export class Game {
     this.controller = new FirstPersonController(camera);
 
     // Карта
-    this.prisonMap = new PrisonMap();
+    const qc = getConfig();
+    this.prisonMap = new PrisonMap({
+      shadows: qc.shadowsEnabled,
+      shadowMapSize: qc.shadowMapSize || 1024,
+    });
     this.scene.add(this.prisonMap.group);
     this.controller.setColliders(this.prisonMap.colliders);
+    // Strip castShadow from tiny decorative meshes (grout lines, dials, seams).
+    // Drops shadow caster count from thousands to hundreds — slashes the
+    // shadow-pass cost on a built-in detailed prison map.
+    pruneShadowCasters(this.prisonMap.group);
 
     // Система дверей
     this.doorSystem = new DoorSystem(this.scene);

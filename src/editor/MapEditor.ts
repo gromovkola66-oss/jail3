@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import { EditorCamera } from './EditorCamera';
 import { getAllEditorObjectTypes, getObjectById, EditorObjectType } from './EditorObjects';
+import {
+  applyToRenderer,
+  configureSunShadow,
+  getRendererOptions,
+  pruneShadowCasters,
+} from '../game/QualitySettings';
 
 export interface PlacedObject {
   id: string;
@@ -84,11 +90,9 @@ export class MapEditor {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x1a1a2e);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer(getRendererOptions());
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    applyToRenderer(this.renderer);
     container.appendChild(this.renderer.domElement);
 
     this.editorCamera = new EditorCamera();
@@ -96,18 +100,9 @@ export class MapEditor {
     this.scene.add(new THREE.AmbientLight(0x606060, 1.5));
     const sun = new THREE.DirectionalLight(0xffffff, 0.8);
     sun.position.set(20, 30, 10);
-    sun.castShadow = true;
-    // Editor scene can be large during placement — properly bound the shadow frustum
-    // to keep the shadow pass cheap (default ±5 leaves most of the scene unshadowed
-    // and wastes work). 1024² is plenty for an editor view.
-    sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.camera.left = -50;
-    sun.shadow.camera.right = 50;
-    sun.shadow.camera.top = 50;
-    sun.shadow.camera.bottom = -50;
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 200;
-    sun.shadow.bias = -0.0012;
+    // Bounds chosen to cover any realistic editor session. configureSunShadow
+    // also disables sun.castShadow entirely on 'low' quality.
+    configureSunShadow(sun, 50, 1, 200);
     this.scene.add(sun);
 
     // 200×200 covers any realistic prison map and keeps line geometry small
@@ -269,6 +264,7 @@ export class MapEditor {
     if (!this.selectedObjectType || !this.ghostObject) return;
     const id = `obj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     const obj = this.selectedObjectType.create();
+    pruneShadowCasters(obj);
     obj.position.copy(this.ghostObject.position);
     obj.rotation.y = THREE.MathUtils.degToRad(this.currentRotation);
     obj.userData.editorId = id;
@@ -557,6 +553,7 @@ export class MapEditor {
 
       const newId = `obj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const newObj = objType.create();
+      pruneShadowCasters(newObj);
       newObj.position.set(srcData.position.x + 1, srcData.position.y, srcData.position.z + 1);
       newObj.rotation.y = THREE.MathUtils.degToRad(srcData.rotation);
       newObj.userData.editorId = newId;
@@ -725,6 +722,7 @@ export class MapEditor {
     const t = getObjectById(data.type);
     if (!t) return;
     const obj = t.create();
+    pruneShadowCasters(obj);
     obj.position.set(data.position.x, data.position.y, data.position.z);
     obj.rotation.y = THREE.MathUtils.degToRad(data.rotation);
     obj.userData.editorId = data.id;
@@ -805,6 +803,7 @@ export class MapEditor {
       const t = getObjectById(d.type);
       if (!t) continue;
       const obj = t.create();
+      pruneShadowCasters(obj);
       obj.position.set(d.position.x, d.position.y, d.position.z);
       obj.rotation.y = THREE.MathUtils.degToRad(d.rotation);
       if (d.rotationX) obj.rotation.x = THREE.MathUtils.degToRad(d.rotationX);
