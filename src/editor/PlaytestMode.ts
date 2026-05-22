@@ -458,6 +458,15 @@ export class PlaytestMode {
   start() {
     this.isRunning = true;
     this.prevTime = performance.now();
+    // Emit initial state to all listeners — Game.setOnCombatUpdate does this via
+    // its setter, but PlaytestMode exposes callbacks as public fields, so the
+    // first state change must be pushed explicitly. Without this, React state
+    // retains values from a previous playtest (e.g. starting as prisoner after
+    // a guard run still shows AK-47 in the HUD until something changes).
+    this.onCombatUpdate?.(this.combat.getState());
+    this.onInventoryUpdate?.(this.inventory.getState());
+    this.onCameraSystemUpdate?.(this.cameraSystem.getState());
+    this.onDoorStateUpdate?.(this.areCellsOpen());
     this.animate();
   }
 

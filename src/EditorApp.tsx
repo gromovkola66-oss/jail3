@@ -42,6 +42,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [ptLocked, setPtLocked] = useState(false);
   const [ptCameraState, setPtCameraState] = useState<CameraSystemState | null>(null);
   const [ptInventory, setPtInventory] = useState<InventoryState | null>(null);
+  const [ptHasDoors, setPtHasDoors] = useState(false);
 
   // Guard menu state
   const [ptTeam, setPtTeam] = useState<'guard' | 'prisoner'>('prisoner');
@@ -176,6 +177,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       };
 
       pt.start();
+      // Whether any cell-doors were placed on this map (controls availability
+      // of the warden "open cells" command).
+      setPtHasDoors(pt.hasDoors());
     }, 100);
   }, []);
 
@@ -189,6 +193,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     }
     setPtCameraState(null);
     setPtInventory(null);
+    setPtCombat(null);
+    setPtHasDoors(false);
     setPtGuardMenuOpen(false);
     setPtIsWarden(false);
     setPtCellsOpen(false);
@@ -533,6 +539,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
               isWarden={ptIsWarden}
               wardenTaken={false}
               cellsOpen={ptCellsOpen}
+              hasDoors={ptHasDoors}
               onBecomeWarden={() => { setPtIsWarden(true); }}
               onToggleCells={() => {
                 if (ptCellsOpen) {

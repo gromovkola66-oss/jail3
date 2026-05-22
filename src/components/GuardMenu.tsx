@@ -6,17 +6,26 @@ interface GuardMenuProps {
   isWarden: boolean;
   wardenTaken: boolean;
   cellsOpen: boolean;
+  /**
+   * Whether the current map has any cell-doors registered.
+   * Defaults to true for the regular game (PrisonMapDetailed always
+   * creates doors). The map editor's playtest sets this from
+   * PlaytestMode.hasDoors() so the warden command is informative
+   * when the playtested map has no `bars_door` objects placed.
+   */
+  hasDoors?: boolean;
   onBecomeWarden: () => void;
   onToggleCells: () => void;
 }
 
-export const GuardMenu = ({ 
-  isOpen, 
-  isWarden, 
+export const GuardMenu = ({
+  isOpen,
+  isWarden,
   wardenTaken,
   cellsOpen,
-  onBecomeWarden, 
-  onToggleCells 
+  hasDoors = true,
+  onBecomeWarden,
+  onToggleCells
 }: GuardMenuProps) => {
 
   // Горячие клавиши
@@ -29,7 +38,7 @@ export const GuardMenu = ({
           if (!isWarden && !wardenTaken) {
             soundSystem.playClick();
             onBecomeWarden();
-          } else if (isWarden) {
+          } else if (isWarden && hasDoors) {
             soundSystem.playClick();
             onToggleCells();
           }
@@ -39,7 +48,7 @@ export const GuardMenu = ({
 
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen, isWarden, wardenTaken, onBecomeWarden, onToggleCells]);
+  }, [isOpen, isWarden, wardenTaken, hasDoors, onBecomeWarden, onToggleCells]);
 
   if (!isOpen) return null;
 
@@ -87,7 +96,7 @@ export const GuardMenu = ({
           )}
 
           {/* Команды начальника */}
-          {isWarden && (
+          {isWarden && hasDoors && (
             <button
               onClick={() => { soundSystem.playClick(); onToggleCells(); }}
               className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all cursor-pointer border
@@ -108,6 +117,17 @@ export const GuardMenu = ({
                 </div>
               </div>
             </button>
+          )}
+
+          {/* No doors on this map (editor playtest with no bars_door objects) */}
+          {isWarden && !hasDoors && (
+            <div className="bg-gray-800/60 border border-gray-600/50 rounded-lg p-3">
+              <div className="text-gray-300 font-bold text-sm mb-1">Нет дверей-решёток</div>
+              <div className="text-gray-500 text-xs">
+                На этой карте не размещены объекты <span className="font-mono text-gray-400">bars_door</span>.
+                Добавьте их в редакторе, чтобы управлять камерами.
+              </div>
+            </div>
           )}
         </div>
 
